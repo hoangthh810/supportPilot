@@ -104,7 +104,7 @@ class Settings(BaseSettings):
         alias="KNOWLEDGE_REINDEX_TIMEOUT_SECONDS", ge=1
     )
     approval_ttl_hours: int = Field(alias="APPROVAL_TTL_HOURS", ge=1)
-    all_business_writes_require_approval: Literal[True] = Field(
+    all_business_writes_require_approval: bool = Field(
         alias="ALL_BUSINESS_WRITES_REQUIRE_APPROVAL"
     )
 
@@ -142,6 +142,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_runtime_invariants(self) -> Self:
+        if not self.all_business_writes_require_approval:
+            raise ValueError("ALL_BUSINESS_WRITES_REQUIRE_APPROVAL must be true")
         if self.workflow_finalization_reserve_seconds >= self.workflow_request_timeout_seconds:
             raise ValueError("workflow finalization reserve must be below request timeout")
         if self.llm_provider is LlmProvider.GEMINI and self.gemini_api_key is None:

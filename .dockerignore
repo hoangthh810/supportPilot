@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+**/__pycache__
+**/*.py[cod]
+frontend/coverage
+frontend/dist
+frontend/node_modules
+infrastructure/db/bootstrap/.env.db000

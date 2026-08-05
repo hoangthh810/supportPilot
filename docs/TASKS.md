@@ -294,7 +294,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### INF-001 — Local Compose and migration-job topology
 
-- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Define healthy startup plus two owner-isolated Alembic infrastructures without creating domain schema.
 - **In scope:** PostgreSQL/bootstrap/migration shells/mock/backend/frontend container topology, two Alembic configs/commands/versions directories, optional empty baselines, health dependencies and private network.
 - **Out of scope:** Domain migration/enum/table/seed, cloud, Redis, queue, Mailpit, OTEL, PDF worker or Kubernetes.
@@ -312,6 +312,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Env interpolation, health race, migration credential leakage.
 - **Review checklist:** [ ] no out-of-scope service [ ] credential matrix [ ] health order [ ] clean config [ ] docs updated.
 - **Completion report:** Use §11 with `Task ID: INF-001`.
+
+#### INF-001 completion report
+
+- Task ID: `INF-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Added the Phase-1 local Compose topology with ordered healthy startup, extension/bootstrap jobs, two owner-isolated empty Alembic infrastructures, private PostgreSQL/Mock-Commerce services and executable catalog/credential assertions; no domain object or seed was created.
+- Files/modules changed: Root `.dockerignore`, `.env.compose.example`, `compose.yaml`, `.gitignore`, `pyproject.toml`; `infrastructure/README.md`; `infrastructure/docker/{backend.Dockerfile,frontend.Dockerfile}`; `infrastructure/containers/mock_commerce_health.py`; `infrastructure/db/bootstrap/{phase1-extensions.sql,run-phase1-bootstrap.sh}`; `infrastructure/migrations/{support,commerce}` Alembic shells; `infrastructure/tests/assert_phase1_catalog.py`; minimal environment-parsing compatibility fix in `backend/apps/support_api/core/config.py`; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Adds only the approved PostgreSQL extensions, existing DB-000 roles/schemas/grants and optional schema-owned Alembic version state. Both revision directories and heads remain empty; no domain table, enum, index, cross-schema FK or seed exists.
+- Migrations created (if authorized): None. The support and commerce Alembic infrastructures have separate config, command, owner DSN, fixed search path and empty `versions/` directories; `SKEL-001` remains owner of the first domain migration.
+- Tests added/updated: Added Phase-1 catalog assertions for exact schema ownership, required extensions and absence of domain relations/enums; added rendered-Compose assertions for DSN/token/port isolation and absence of a seed service. Runtime Compose startup and existing backend/frontend suites were also exercised.
+- Required context loaded: This `INF-001` task section; `docs/ARCHITECTURE.md` §18, §19 and §20; `docs/DATABASE_DESIGN.md` §3, §4 and §18; `docs/SECURITY.md` §3, §7 and §17; `docs/ROADMAP.md` §5 and §16.
+- Additional context loaded and reasons: `docs/TASKS.md` command catalog and §16 completion template to execute/report gates; repository status/file inventory, root environment/package files, backend health/settings shell, frontend package/Vite config and the existing DB-000 bootstrap Compose/scripts to integrate without replacing approved configuration. The direct dependent task heading was viewed only to confirm it remained `TODO`.
+- Dependency completion reports reviewed: Direct dependencies `FND-001`, `FND-002` and `DB-000`; all were reviewer-approved with final status `DONE`, no PLAN deviations and `INF-001` explicitly unblocked.
+- Context intentionally not loaded: Entire `docs/PLAN.md`, non-required specialist-document sections, unrelated task completion reports and all domain implementation areas owned by Phase 2 or later.
+- Commands run and results: `docker compose config --quiet` PASS; rendered Compose credential/token/port/no-seed assertions PASS; clean `docker compose up --build --detach --wait` PASS; support and commerce Alembic head smoke PASS with empty heads; Phase-1 catalog assertions PASS; backend/frontend health smoke PASS; `pytest` PASS (20 tests); Ruff PASS; Mypy PASS (18 source files); frontend typecheck PASS; frontend tests PASS (3 files, 7 tests); frontend build PASS (41 modules); frontend bundle secret scan PASS; `git diff --check` PASS; smoke-credential/no-revision/no-domain-DDL-or-seed scans PASS; stack/volume cleanup PASS.
+- Security checks: Bootstrap/admin and owner DSNs are absent from runtime services; each migration job receives only its own owner DSN; backend and Mock-Commerce receive only their owning runtime DSN and the internal token; frontend receives neither; only backend/frontend publish host ports; PostgreSQL and Mock-Commerce remain private; placeholder/real secret files are ignored and generated smoke credentials were neither committed nor left in the workspace.
+- Acceptance criteria evidence: Rendered Compose validates and enforces the credential matrix; health dependencies follow PostgreSQL → bootstrap → isolated migrations → Mock-Commerce/backend → frontend; both Alembic environments enforce the correct owner and `support, pg_catalog` or `commerce, pg_catalog` search path; empty-head and catalog checks prove no domain table/enum/seed; a clean extension-enabled PostgreSQL volume reached a fully healthy stack.
+- Risks/limitations remaining: The Mock-Commerce container is intentionally only a private Phase-1 health shell and the existing backend readiness route is a foundation-level process/config check; business endpoints and deeper dependency readiness belong to later owning tasks. Docker Compose stores the one-shot migration credentials in its daemon-managed service configuration, so local developer access to Docker remains privileged as expected.
+- Deviations from PLAN: None. One integration correction changed `ALL_BUSINESS_WRITES_REQUIRE_APPROVAL` from an environment-incompatible `Literal[True]` field to a parsed boolean plus an equivalent fail-fast `must be true` invariant; the approved semantic contract is unchanged.
+- Follow-up tasks unblocked: `SKEL-001` now has all declared dependencies satisfied, but it was not started and remains `TODO` pending review of `INF-001`.
 
 ## 6. Phase 2 — Walking Skeleton
 
