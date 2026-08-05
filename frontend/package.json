@@ -1,0 +1,29 @@
+{
+  "name": "supportpilot-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
+    "build": "npm run typecheck && vite build",
+    "security:scan": "node scripts/check-bundle-secrets.mjs"
+  },
+  "dependencies": {
+    "pinia": ">=3.0.0 <4",
+    "vue": ">=3.5.0 <4",
+    "vue-router": ">=4.5.0 <5"
+  },
+  "devDependencies": {
+    "@types/node": ">=22 <25",
+    "@vitejs/plugin-vue": ">=6 <7",
+    "@vue/test-utils": ">=2.4 <3",
+    "jsdom": ">=26 <28",
+    "typescript": ">=5.8 <6",
+    "vite": ">=7 <8",
+    "vitest": ">=3.2 <5",
+    "vue-tsc": ">=3 <4"
+  }
+}
+

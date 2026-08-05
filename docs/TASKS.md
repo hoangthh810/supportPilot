@@ -171,7 +171,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### FND-001 — FastAPI foundation shell
 
-- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Establish FastAPI config/error/DI/quality shell and fail-fast environment validation.
 - **In scope:** Application factory, config contract, error/correlation envelope, health shell, dependency direction and backend quality commands.
 - **Out of scope:** Domain services, Ticket/Agent/RAG/approval logic or provider calls.
@@ -192,9 +192,9 @@ Nếu phát hiện mâu thuẫn:
 #### FND-001 completion report
 
 - Task ID: `FND-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Added the FastAPI foundation shell with typed fail-fast runtime configuration, safe error/correlation handling, dependency injection, redacted JSON logging, health endpoints and backend quality gates; ready for reviewer decision, not marked `DONE`.
+- Goal achieved: Added the FastAPI foundation shell with typed fail-fast runtime configuration, safe error/correlation handling, dependency injection, redacted JSON logging, health endpoints and backend quality gates; approved by the reviewer.
 - Files/modules changed: `.env.example`, `.gitignore`, `pyproject.toml`, `backend/apps/support_api/{app.py,dependencies.py,health.py,main.py}`, `backend/apps/support_api/core/{config.py,correlation.py,errors.py,logging.py}`, package markers, and `backend/tests` foundation tests.
 - Contract/schema impact: Implements the approved public correlation/error and runtime-config foundation only; no domain/API business contract change and no database schema impact.
 - Migrations created (if authorized): None.
@@ -212,7 +212,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### FND-002 — Vue foundation shell
 
-- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Establish Vue/Vite/TypeScript/Router/Pinia/typed HTTP shell.
 - **In scope:** App shell, routes/layout, typed client, correlation/error handling and frontend quality commands.
 - **Out of scope:** Ticket/approval screens or business behavior.
@@ -229,6 +229,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** API type drift, client bypassing public prefix, hidden authorization assumptions.
 - **Review checklist:** [ ] typed API only [ ] no domain scope [ ] tests/build pass [ ] no secrets [ ] docs aligned.
 - **Completion report:** Use §11 with `Task ID: FND-002`.
+
+#### FND-002 completion report
+
+- Task ID: `FND-002`
+- Final status: `DONE`
+- Owner: Unassigned
+- Goal achieved: Added the Vue 3/Vite/TypeScript/Router/Pinia foundation with a neutral app shell, typed public HTTP client, correlation/error handling, in-memory user session boundary and reproducible frontend quality commands; all acceptance criteria and required quality gates were approved by the reviewer.
+- Files/modules changed: `.gitignore`; `frontend/package.json`, `package-lock.json`, `.env.example`, TypeScript/Vite config, `index.html`, `src/{router,stores,services,layouts,types,views}`, frontend tests and the production bundle security scanner.
+- Contract/schema impact: Implements the approved frontend/public API foundation only; no backend endpoint, domain contract, database schema or infrastructure change.
+- Migrations created (if authorized): None.
+- Tests added/updated: Seven frontend tests across three test files covering the public API prefix, correlation, user Bearer handling, safe error mapping, path escape prevention, in-memory session behavior and the app layout shell.
+- Required context loaded: This FND-002 task section; `docs/ARCHITECTURE.md` §5 and §6; `docs/API_CONTRACT.md` §1, §2, §3, §4 and §10; `docs/SECURITY.md` §4, §5, §17 and §18.
+- Additional context loaded and reasons: `FND-001` metadata/completion report to satisfy the user's explicit pre-code review-state check; repository file/status inventory to avoid overwriting backend or infrastructure; `docs/TASKS.md` command catalog and §16 completion template to execute/report the required gates; direct dependent-ID grep for handoff.
+- Dependency completion reports reviewed: Direct dependency `DOC-001`; final status `DONE`, no deviations or unresolved PLAN contradiction.
+- Context intentionally not loaded: `docs/PLAN.md`, the other six specialist documents, unrelated task completion reports, backend implementation contents and any infrastructure implementation.
+- Commands run and results: Node `v22.13.0`; npm `10.9.2`; local `npm install` completed with zero reported vulnerabilities; `npm --prefix=frontend run typecheck` PASS; `npm --prefix=frontend run test` PASS (3 files, 7 tests); `npm --prefix=frontend run build` PASS (41 modules); `npm --prefix=frontend run security:scan` PASS; source/dist forbidden-reference grep PASS; `git diff --check` PASS.
+- Security checks: Only `VITE_PUBLIC_API_BASE_URL` is exposed to Vite; production bundle scan found no internal service token/key names, database/JWT/Gemini secrets, internal endpoint or Gemini host; user access token remains in-memory and is never logged; HTTP client accepts only `/api/v1`, rejects escape paths and never defines direct Gemini/Mock-Commerce access.
+- Acceptance criteria evidence: Strict Vue TypeScript check passes; all frontend tests pass; production build succeeds; typed client propagates `X-Correlation-ID` and maps the approved safe error envelope; no backend/infrastructure diff exists; bundle secret scan passes.
+- Risks/limitations remaining: The session store is intentionally memory-only and the shell has no login, Ticket or approval business UI; those behaviors belong to their owning later tasks. Deployment must supply a trusted public API origin ending in `/api/v1` when not using the same-origin default. npm reported zero vulnerabilities but emitted a deprecation warning for transitive `glob@10.5.0`; dependency owners should be monitored during later maintenance.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: The `FND-002` dependency is now satisfied for `INF-001`, `SKEL-001` and `WEB-001`; their remaining dependencies still apply and none was started.
 
 ### DB-000 — Database role/schema bootstrap
 
