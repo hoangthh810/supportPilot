@@ -253,7 +253,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### DB-000 — Database role/schema bootstrap
 
-- **Metadata:** Phase 1; size `S`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `S`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Idempotently create two schemas, two owners, two runtime roles and least-privilege grants.
 - **In scope:** One-shot bootstrap using `POSTGRES_BOOTSTRAP_DATABASE_URL` plus four role-password secrets, default privileges, revoke cross-schema/public access and grant/catalog assertions.
 - **Out of scope:** Alembic, domain enums/tables/seed or any downstream use of bootstrap credential.
@@ -270,6 +270,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Overbroad default privileges, credential exposure, non-idempotent role DDL.
 - **Review checklist:** [ ] exact targets [ ] least privilege [ ] re-run test [ ] cross-schema denial [ ] secret review.
 - **Completion report:** Use §11 with `Task ID: DB-000`.
+
+#### DB-000 completion report
+
+- Task ID: `DB-000`
+- Final status: `DONE`
+- Owner: Unassigned
+- Goal achieved: Added an idempotent one-shot PostgreSQL bootstrap for the exact support/commerce owners and runtime roles, isolated schemas, least-privilege/default grants, clean Compose harness and executable catalog/grant assertions; all acceptance criteria, tests and security checks were approved by the reviewer.
+- Files/modules changed: `.gitignore`; `infrastructure/db/bootstrap/{compose.yaml,.env.db000.example,bootstrap.sql,run-bootstrap.sh,run-integration.ps1,README.md}` and `infrastructure/db/bootstrap/tests/{assert-catalog.sql,verify-grants.sh}`.
+- Contract/schema impact: Creates only `support_owner`, `support_app`, `commerce_owner`, `commerce_app`, the `support`/`commerce` schemas and their grants/default privileges; no extensions, Alembic state, domain enum/table, cross-schema FK or seed data.
+- Migrations created (if authorized): None; DB-000 is bootstrap infrastructure and does not own a domain migration.
+- Tests added/updated: Clean PostgreSQL Compose integration harness with role-attribute/schema-owner/catalog assertions, two consecutive bootstrap executions, runtime DML/sequence probes, cross-schema denial, runtime `CREATE` denial, PUBLIC isolation, membership isolation and post-clean catalog verification.
+- Required context loaded: This DB-000 task section; `docs/ARCHITECTURE.md` §11 and §18; `docs/DATABASE_DESIGN.md` §1, §3, §4 and §18; `docs/SECURITY.md` §7 and §17.
+- Additional context loaded and reasons: `docs/TASKS.md` command catalog and §16 completion template to execute/report required gates; direct dependent-ID grep for handoff; repository/Docker inventory and workspace ACL/write checks to resolve the prior infrastructure write blocker. `docs/SECURITY.md` §24 was incidentally included in the initial targeted line selection and did not expand implementation scope.
+- Dependency completion reports reviewed: Direct task dependency `FND-001`; final status `DONE`, reviewer-approved, no deviations and DB-000 explicitly listed as unblocked. The non-task PostgreSQL/Compose prerequisite was verified locally with Docker Engine 29.4.0 and Compose 5.1.1.
+- Context intentionally not loaded: `docs/PLAN.md`, the other six specialist documents, unrelated task completion reports, backend/frontend implementation contents and `INF-001` implementation scope.
+- Commands run and results: Workspace write check PASS outside sandbox; PowerShell runner parse PASS; Docker daemon/server check PASS; Compose config validation PASS; clean `docker compose up --build --detach --wait postgres` PASS; bootstrap execution 1 PASS; identical bootstrap execution 2 PASS; grant/catalog integration job PASS; cleanup PASS with no remaining test container/volume; `git diff --check` PASS.
+- Security checks: Bootstrap receives only the admin DSN plus four role-password environments; rendered Compose scope assertion blocks the admin DSN from every other service; real/generated passwords are not committed or printed; roles are LOGIN but NOSUPERUSER/NOCREATEDB/NOCREATEROLE/NOINHERIT/NOREPLICATION/NOBYPASSRLS; PUBLIC and cross-schema privileges are revoked; runtime roles have no role membership or schema `CREATE`.
+- Acceptance criteria evidence: Rerun is successful and preserves exact owners; both runtime roles can use future owner-created tables/sequences only in their own schema and are denied the other schema; admin DSN exists only on `db-bootstrap`; roles are distinct with no membership; Phase-1 catalog assertions prove zero application relations and zero domain enums before and after grant probes.
+- Risks/limitations remaining: The self-contained `postgres:16-alpine` Compose file is an isolated DB-000 integration harness, not the final local topology or extension-enabled image owned by `INF-001`. The bootstrap URI is passed only to the transient isolated `psql` process and never logged.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: The `DB-000` dependency is now satisfied for `INF-001`, `SKEL-001`, `DB-001A`, `DB-002A` and `DB-001C`; their remaining dependencies still apply and none was started.
 
 ### INF-001 — Local Compose and migration-job topology
 

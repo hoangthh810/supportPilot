@@ -8,4 +8,5 @@ __pycache__/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
+infrastructure/db/bootstrap/.env.db000
 

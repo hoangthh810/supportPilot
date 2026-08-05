@@ -1,0 +1,65 @@
+name: supportpilot-db000
+
+services:
+  postgres:
+    image: ${DB000_POSTGRES_IMAGE:-postgres:16-alpine}
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_DB
+      - POSTGRES_PASSWORD
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      - db000
+    volumes:
+      - db000-postgres-data:/var/lib/postgresql/data
+
+  db-bootstrap:
+    image: ${DB000_POSTGRES_IMAGE:-postgres:16-alpine}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_BOOTSTRAP_DATABASE_URL
+      - SUPPORT_OWNER_PASSWORD
+      - COMMERCE_OWNER_PASSWORD
+      - SUPPORT_APP_PASSWORD
+      - COMMERCE_APP_PASSWORD
+    entrypoint: ["/bin/sh", "/db/run-bootstrap.sh"]
+    networks:
+      - db000
+    restart: "no"
+    volumes:
+      - ./bootstrap.sql:/db/bootstrap.sql:ro
+      - ./run-bootstrap.sh:/db/run-bootstrap.sh:ro
+
+  grant-tests:
+    image: ${DB000_POSTGRES_IMAGE:-postgres:16-alpine}
+    depends_on:
+      db-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - POSTGRES_DB
+      - SUPPORT_OWNER_PASSWORD
+      - COMMERCE_OWNER_PASSWORD
+      - SUPPORT_APP_PASSWORD
+      - COMMERCE_APP_PASSWORD
+    entrypoint: ["/bin/sh", "/db/tests/verify-grants.sh"]
+    networks:
+      - db000
+    restart: "no"
+    volumes:
+      - ./tests:/db/tests:ro
+
+networks:
+  db000:
+    internal: true
+
+volumes:
+  db000-postgres-data:
+
