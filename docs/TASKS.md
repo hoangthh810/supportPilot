@@ -171,7 +171,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### FND-001 — FastAPI foundation shell
 
-- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Establish FastAPI config/error/DI/quality shell and fail-fast environment validation.
 - **In scope:** Application factory, config contract, error/correlation envelope, health shell, dependency direction and backend quality commands.
 - **Out of scope:** Domain services, Ticket/Agent/RAG/approval logic or provider calls.
@@ -188,6 +188,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Config drift, secret leakage, framework code absorbing domain logic.
 - **Review checklist:** [ ] only foundation scope [ ] config matches PLAN [ ] tests pass [ ] no domain coupling [ ] docs updated.
 - **Completion report:** Use §11 with `Task ID: FND-001`.
+
+#### FND-001 completion report
+
+- Task ID: `FND-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Added the FastAPI foundation shell with typed fail-fast runtime configuration, safe error/correlation handling, dependency injection, redacted JSON logging, health endpoints and backend quality gates; ready for reviewer decision, not marked `DONE`.
+- Files/modules changed: `.env.example`, `.gitignore`, `pyproject.toml`, `backend/apps/support_api/{app.py,dependencies.py,health.py,main.py}`, `backend/apps/support_api/core/{config.py,correlation.py,errors.py,logging.py}`, package markers, and `backend/tests` foundation tests.
+- Contract/schema impact: Implements the approved public correlation/error and runtime-config foundation only; no domain/API business contract change and no database schema impact.
+- Migrations created (if authorized): None.
+- Tests added/updated: 20 configuration, health, correlation, error-envelope, redaction and import-boundary tests.
+- Required context loaded: This FND-001 task section; `docs/ARCHITECTURE.md` §4, §6, §13 and §18; `docs/API_CONTRACT.md` §1, §3, §4 and §9.1; `docs/SECURITY.md` §17, §18 and §24.
+- Additional context loaded and reasons: `docs/PLAN.md` §14 to resolve the exact environment contract and the targeted §16 backend health row to resolve health route names; `docs/TASKS.md` command catalog and §16 completion template to execute/report required gates; direct dependent-ID grep for handoff. API_CONTRACT §2 and §10 were incidentally included by the initial contiguous line selection, did not introduce scope, and were not used to implement auth.
+- Dependency completion reports reviewed: `DOC-001` completion report; final status `DONE`, no deviations or unresolved PLAN contradiction, and `FND-001` explicitly unblocked.
+- Context intentionally not loaded: The rest of PLAN, the other six specialist documents, unrelated TASKS sections/completion reports, and implementation areas outside the FND-001 backend foundation.
+- Commands run and results: Python AST parse PASS (18 files); TOML parse PASS; `ruff check --no-cache backend` PASS; `mypy backend` PASS (18 files); `pytest backend/tests -q` PASS (20 tests).
+- Security checks: Missing/invalid config fails validation; bootstrap/owner/commerce DSNs are absent from backend settings; settings repr, JSON logs, health and error responses redact secrets; raw Bearer tokens are redacted; safe errors omit input/traceback; import-boundary test rejects Mock-Commerce runtime imports.
+- Acceptance criteria evidence: Required-config, runtime-role, provider and timeout invariant tests pass; health responses and all error envelopes propagate `X-Correlation-ID`; secrets are absent from logs/responses; strict Ruff/Mypy and all unit tests pass; foundation imports contain no domain or Mock-Commerce runtime coupling.
+- Risks/limitations remaining: `/health/ready` verifies the Phase-1 configuration shell only; database/service readiness checks belong to their owning later tasks. No dependency lockfile is introduced by this task.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: The `FND-001` dependency is now satisfied for `DB-000`, `INF-001`, `SKEL-001` and `MOCK-AUTH-001`; their remaining dependencies still apply and none was started.
 
 ### FND-002 — Vue foundation shell
 
