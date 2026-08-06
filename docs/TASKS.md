@@ -338,7 +338,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### SKEL-001 — End-to-end Walking Skeleton
 
-- **Metadata:** Phase 2; size `M`; milestone `v0.1-skeleton`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 2; size `M`; milestone `v0.1-skeleton`; status `DONE`; Owner: Unassigned.
 - **Goal:** Own the first domain migration and demonstrate Vue → FastAPI → PostgreSQL → fixed proposal → fake decision/result using final-shaped contracts.
 - **In scope:** First minimal forward-compatible migration for final-named `support.users/customers/support_tickets/ticket_messages` plus required enum/index, demo login, Ticket/message persistence, explicit run endpoint, fake adapters and basic UI result.
 - **Out of scope:** SQLite/in-memory/temp schema, full DB-001A, commerce/RAG/workflow/approval tables, Gemini, embeddings, full LangGraph, real commerce transaction, full edit/payment sync.
@@ -361,9 +361,9 @@ Nếu phát hiện mâu thuẫn:
 #### SKEL-001 completion report
 
 - Task ID: `SKEL-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Implemented the first runnable Vue → final-shaped FastAPI API → real PostgreSQL Walking Skeleton for UC-01, with explicit Ticket/run requests, fixed proposal review, deterministic fake action verification, approved-path `VERIFIED` → `RESOLVED` and rejected-path `ESCALATED`.
+- Goal achieved: Implemented the first runnable Vue → final-shaped FastAPI API → real PostgreSQL Walking Skeleton for UC-01, with explicit Ticket/run requests, fixed proposal review, deterministic fake action verification, approved-path `VERIFIED` → `RESOLVED` and rejected-path `ESCALATED`; all acceptance criteria, quality checks, Compose and E2E smoke tests were approved by the reviewer.
 - Files/modules changed: `pyproject.toml`, `compose.yaml`; backend application/config/database composition; new `backend/apps/support_api/walking_skeleton/{contracts,adapters,repository,service,router}.py`; support revision `infrastructure/migrations/support/versions/0001_walking_skeleton.py`; both Alembic environment transaction fixes; Vue API types/service and `HomeView.vue`; HTTP client binding fix; backend/frontend/E2E tests; `infrastructure/README.md`; and this task status/report.
 - Contract/schema impact: Adds only final-named `support.users`, `support.customers`, `support.support_tickets`, `support.ticket_messages`, their minimal required final enums/constraints/indexes and two synthetic demo identities. Commerce remains without domain tables; no workflow, approval, action, RAG or attachment table was created. Public paths and response/state names match the approved login, Ticket, explicit run and approval contracts.
 - Migrations created (if authorized): `0001_walking_skeleton` is the authorized first support-domain revision owned by `SKEL-001`; commerce has no revision. It runs with `support_owner`, retains `commerce` isolation and uses PostgreSQL only—no SQLite, temporary or throwaway schema.
@@ -377,13 +377,13 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: Clean empty Phase-1 schemas migrate to exactly the four permitted support tables and six required final enums; Ticket and first message persist transactionally before any run; run creation is a separate public request with replay and active-run conflict behavior; fake adapters are behind protocols and composition root; approve resolves only after deterministic `VERIFIED`, reject escalates without action; UI shows the persisted Ticket, proposal and terminal result; release-profile fake guard is tested.
 - Risks/limitations remaining: Run/approval/proposal state is intentionally in-memory and lost on backend restart; only Ticket/message and terminal Ticket status persist. Demo auth, fixed proposal and fake verification are local/test scaffolding, explicitly not production evidence, and are replaced by their owning later tasks.
 - Deviations from PLAN: None. Two prerequisite integration defects were corrected without semantic change: Alembic now commits its session-level search path before the migration transaction, and the browser HTTP client binds native `window.fetch` correctly.
-- Follow-up tasks unblocked: After reviewer approval and `DONE`, `DB-001A`, `DB-002A` and `DB-001C` will have their declared prerequisites satisfied. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and `SKEL-001` is now `DONE`; its dependency is satisfied for `DB-001A`, `DB-002A` and `DB-001C`. Their remaining dependencies still apply, and none was started.
 
 ## 7. Phase 3 — Core database, auth and Ticket APIs
 
 ### DB-001A — Core support identity and Ticket persistence
 
-- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Extend skeleton data into final `users/customers/support_tickets/ticket_messages` contract.
 - **In scope:** Plaintext synthetic columns, FKs/constraints/indexes, forward backfill and repositories.
 - **Out of scope:** Field cipher/lookup-hash, address, attachment, workflow hoặc knowledge tables.
@@ -400,6 +400,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Destructive skeleton migration, null/backfill error, accidental real-data claim.
 - **Review checklist:** [ ] schema matches docs [ ] forward-only [ ] constraints/indexes [ ] grants [ ] tests/rollback review.
 - **Completion report:** Use §11 with `Task ID: DB-001A`.
+
+#### DB-001A completion report
+
+- Task ID: `DB-001A`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Upgraded the four final-named Walking Skeleton support tables to the complete DB-001A physical contract through an in-place forward Alembic revision, preserving existing rows and identifiers without dropping or recreating a table.
+- Files/modules changed: `infrastructure/migrations/support/versions/0002_db001a_core_support.py`; `infrastructure/tests/run_db001a_integration.py`; `backend/tests/test_db001a_migration.py`; `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Adds UUID generation defaults to all four primary keys; adds nullable `users.last_login_at`, `customers.phone`, `support_tickets.assigned_user_id` and `support_tickets.closed_at`; adds the same-schema assigned-user `RESTRICT` FK plus v0.1 intent and closed-time structural checks. Existing enums, unique constraints, indexes, Ticket resolution invariant and all skeleton data remain intact. No attachment, cipher/hash, address, workflow, knowledge or commerce object was added.
+- Migrations created (if authorized): `0002_db001a_core_support`, revising `0001_walking_skeleton`. Upgrade uses only `ALTER COLUMN`, `ADD COLUMN`, `ADD FOREIGN KEY` and `ADD CHECK`; downgrade removes only DB-001A additions and restores skeleton UUID-default behavior. Neither direction drops or recreates a skeleton table.
+- Tests added/updated: Added three AST migration guards against table drop/recreate and deferred columns; added a real PostgreSQL integration suite covering pre-upgrade fixture preservation, exact columns/defaults/constraints/indexes, all support FK delete behaviors, no cross-schema FK, runtime grants/isolation, invalid intent/version/timestamps/FKs, existing repository replay/customer scope/status compatibility, and downgrade/upgrade data preservation.
+- Required context loaded: This `DB-001A` task section; `docs/DATABASE_DESIGN.md` §3, §6, §10, §17 and §18; `docs/SECURITY.md` §6, §7 and §16; `docs/ARCHITECTURE.md` §11.
+- Additional context loaded and reasons: Direct dependency completion reports for `SKEL-001`, `DB-000` and `INF-001`; `docs/TASKS.md` status workflow, command catalog and completion template to execute/report required gates; the existing support Alembic environment and skeleton revision, runtime database factory/repository, backend tests, Compose topology, infrastructure test harness and README to implement and verify the forward migration without replacing approved configuration; downstream dependency headings only for the completion handoff.
+- Dependency completion reports reviewed: `SKEL-001`, `DB-000` and `INF-001`; all are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and the required support owner/runtime-role boundary is available.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; non-required document sections; unrelated completion reports; frontend code; commerce implementation; and all AUTH-001, TKT-001, workflow, approval, knowledge and later-task implementation areas.
+- Commands run and results: Targeted Ruff PASS; migration guard tests PASS (3); strict Mypy PASS (27 source files); full backend Ruff PASS; full backend tests PASS (27); Compose config PASS; support Alembic `heads/current` both reported `0002_db001a_core_support`; isolated PostgreSQL DB-001A integration PASS for downgrade-to-skeleton, fixture insert, forward upgrade, physical/constraint/grant/repository checks and final downgrade/upgrade round trip; `git diff --check` PASS. The isolated Compose project, network and test volume were removed after the successful run.
+- Security checks: Only synthetic `.test` identities/content were used; password hashes remain Argon2; no real PII/payment secret or fake cipher/hash field was introduced; `support_app` can use the upgraded support tables but still has no `commerce` schema usage; all FKs remain within `support` with `RESTRICT`; owner credential remained confined to the migration/test container and no credential value was logged or committed.
+- Acceptance criteria evidence: A fixture created while the database was at `0001_walking_skeleton` compared byte-for-value equal on every pre-existing field after `0002`; catalog assertions prove the exact DB-001A columns, UUID defaults, named checks/FKs/indexes and zero cross-schema FK; invalid structural writes fail; repository create/replay/customer isolation/status operations pass under `support_app`; AST guards prove no table replacement in either migration direction.
+- Risks/limitations remaining: Plaintext identity/Ticket/message fields are explicitly synthetic-only until the deferred v1.0 encryption migration. Downgrading intentionally discards values in the four DB-001A-added nullable columns, while preserving all pre-existing skeleton fields and rows. The current Walking Skeleton repository remains temporary and its replacement belongs to AUTH-001/TKT-001.
+- Deviations from PLAN: None. The first integration run exposed only a test-adapter detail: asyncpg returns PostgreSQL internal `char` catalog fields as bytes; the assertion now normalizes that representation without changing schema semantics, and the complete rerun passed.
+- Follow-up tasks unblocked: Once reviewer approval changes `DB-001A` to `DONE`, `AUTH-001` and `DB-001B3` will have all declared dependencies satisfied; the DB-001A dependency will also be satisfied for `TKT-001`, `SEED-001`, `DB-001B1` and other listed downstream tasks whose remaining dependencies still apply. None was started.
 
 ### AUTH-001 — Access-token authentication and RBAC
 

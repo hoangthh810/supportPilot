@@ -15,10 +15,12 @@ workflow/approval persistence, queue or Redis service.
 - PostgreSQL and Mock-Commerce are not published to the host. Only the frontend and
   backend development ports are published.
 
-The support Alembic branch contains the first minimal, forward-compatible domain revision
-owned by `SKEL-001`. It creates only `support.users`, `support.customers`,
-`support.support_tickets` and `support.ticket_messages` plus required enums/indexes and
-synthetic demo identities. The commerce Alembic branch remains empty.
+The support Alembic branch starts with the minimal, forward-compatible domain revision
+owned by `SKEL-001`. The following `DB-001A` revision upgrades those same final-named
+`support.users`, `support.customers`, `support.support_tickets` and
+`support.ticket_messages` tables in place. It adds the remaining identity/Ticket columns,
+UUID defaults, foreign key and structural checks without dropping or recreating a skeleton
+table, so existing synthetic data is preserved. The commerce Alembic branch remains empty.
 
 ## Walking Skeleton commands
 
