@@ -67,6 +67,13 @@ def test_local_embedding_provenance_is_fixed_for_v0_1() -> None:
         build_settings(data)
 
 
+def test_release_profile_rejects_fake_providers() -> None:
+    data = valid_settings_data()
+    data["WORKFLOW_PROFILE"] = "v0_1"
+    with pytest.raises(ValidationError, match="release profile cannot use fake providers"):
+        build_settings(data)
+
+
 def test_secret_values_are_redacted_from_settings_representation(settings: Settings) -> None:
     rendered = repr(settings)
     for secret in settings.secret_values():

@@ -25,3 +25,9 @@ def test_support_api_has_no_mock_commerce_runtime_imports() -> None:
 
     assert violations == []
 
+
+def test_public_skeleton_router_does_not_import_fake_implementations() -> None:
+    router_path = Path("backend/apps/support_api/walking_skeleton/router.py")
+    modules = imported_modules(router_path)
+
+    assert "backend.apps.support_api.walking_skeleton.adapters" not in modules

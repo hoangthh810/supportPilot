@@ -36,3 +36,57 @@ export interface Money {
   currency: string
 }
 
+export interface TicketCreateRequest {
+  subject: string
+  body: string
+  source: 'web'
+}
+
+export interface TicketCreateResponse extends CorrelationEnvelope {
+  ticket_id: string
+  ticket_number: string
+  ticket_status: 'OPEN'
+}
+
+export interface AgentRunResponse extends CorrelationEnvelope {
+  run_id: string
+  run_status: 'WAITING_APPROVAL'
+  ticket_status: 'WAITING_APPROVAL'
+  next_required_action: 'approval'
+  approval_request_id: string
+  timeline_cursor: string
+}
+
+export interface ApprovalDetail extends CorrelationEnvelope {
+  approval_id: string
+  approval_status: string
+  proposal_version: number
+  proposal_hash: string
+  run_id: string
+  ticket_id: string
+  summary: string
+  action: Record<string, unknown>
+  evidence: string[]
+  synthetic: true
+}
+
+export interface ApprovalDecisionRequest {
+  decision: 'approve' | 'reject'
+  reason: string
+  expected_version: number
+  expected_proposal_hash: string
+  edited_action: null
+}
+
+export interface ApprovalDecisionResponse extends CorrelationEnvelope {
+  approval_id: string
+  approval_status: 'APPROVED' | 'REJECTED'
+  proposal_version: number
+  proposal_hash: string
+  run_id: string
+  run_status: 'COMPLETED' | 'ESCALATED'
+  ticket_status: 'RESOLVED' | 'ESCALATED'
+  action_execution_status: 'VERIFIED' | null
+  next_required_action: null
+  timeline_cursor: string
+}

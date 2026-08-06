@@ -100,7 +100,7 @@ services:
       CORRELATION_HEADER: X-Correlation-ID
       WORKFLOW_REQUEST_TIMEOUT_SECONDS: 60
       WORKFLOW_FINALIZATION_RESERVE_SECONDS: 5
-      WORKFLOW_PROFILE: v0_1
+      WORKFLOW_PROFILE: walking_skeleton
       SUPPORT_DATABASE_URL: postgresql+asyncpg://support_app:${SUPPORT_APP_PASSWORD:?SUPPORT_APP_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-supportpilot}
       DB_POOL_SIZE: 10
       DB_POOL_TIMEOUT_SECONDS: 5

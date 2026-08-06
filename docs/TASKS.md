@@ -294,7 +294,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### INF-001 — Local Compose and migration-job topology
 
-- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 1; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Define healthy startup plus two owner-isolated Alembic infrastructures without creating domain schema.
 - **In scope:** PostgreSQL/bootstrap/migration shells/mock/backend/frontend container topology, two Alembic configs/commands/versions directories, optional empty baselines, health dependencies and private network.
 - **Out of scope:** Domain migration/enum/table/seed, cloud, Redis, queue, Mailpit, OTEL, PDF worker or Kubernetes.
@@ -316,9 +316,9 @@ Nếu phát hiện mâu thuẫn:
 #### INF-001 completion report
 
 - Task ID: `INF-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Added the Phase-1 local Compose topology with ordered healthy startup, extension/bootstrap jobs, two owner-isolated empty Alembic infrastructures, private PostgreSQL/Mock-Commerce services and executable catalog/credential assertions; no domain object or seed was created.
+- Goal achieved: Added the Phase-1 local Compose topology with ordered healthy startup, extension/bootstrap jobs, two owner-isolated empty Alembic infrastructures, private PostgreSQL/Mock-Commerce services and executable catalog/credential assertions; no domain object or seed was created, and the reviewer approved all acceptance criteria, tests and security checks.
 - Files/modules changed: Root `.dockerignore`, `.env.compose.example`, `compose.yaml`, `.gitignore`, `pyproject.toml`; `infrastructure/README.md`; `infrastructure/docker/{backend.Dockerfile,frontend.Dockerfile}`; `infrastructure/containers/mock_commerce_health.py`; `infrastructure/db/bootstrap/{phase1-extensions.sql,run-phase1-bootstrap.sh}`; `infrastructure/migrations/{support,commerce}` Alembic shells; `infrastructure/tests/assert_phase1_catalog.py`; minimal environment-parsing compatibility fix in `backend/apps/support_api/core/config.py`; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: Adds only the approved PostgreSQL extensions, existing DB-000 roles/schemas/grants and optional schema-owned Alembic version state. Both revision directories and heads remain empty; no domain table, enum, index, cross-schema FK or seed exists.
 - Migrations created (if authorized): None. The support and commerce Alembic infrastructures have separate config, command, owner DSN, fixed search path and empty `versions/` directories; `SKEL-001` remains owner of the first domain migration.
@@ -332,13 +332,13 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: Rendered Compose validates and enforces the credential matrix; health dependencies follow PostgreSQL → bootstrap → isolated migrations → Mock-Commerce/backend → frontend; both Alembic environments enforce the correct owner and `support, pg_catalog` or `commerce, pg_catalog` search path; empty-head and catalog checks prove no domain table/enum/seed; a clean extension-enabled PostgreSQL volume reached a fully healthy stack.
 - Risks/limitations remaining: The Mock-Commerce container is intentionally only a private Phase-1 health shell and the existing backend readiness route is a foundation-level process/config check; business endpoints and deeper dependency readiness belong to later owning tasks. Docker Compose stores the one-shot migration credentials in its daemon-managed service configuration, so local developer access to Docker remains privileged as expected.
 - Deviations from PLAN: None. One integration correction changed `ALL_BUSINESS_WRITES_REQUIRE_APPROVAL` from an environment-incompatible `Literal[True]` field to a parsed boolean plus an equivalent fail-fast `must be true` invariant; the approved semantic contract is unchanged.
-- Follow-up tasks unblocked: `SKEL-001` now has all declared dependencies satisfied, but it was not started and remains `TODO` pending review of `INF-001`.
+- Follow-up tasks unblocked: `SKEL-001` now has all declared dependencies satisfied, but it was not started and remains `TODO`.
 
 ## 6. Phase 2 — Walking Skeleton
 
 ### SKEL-001 — End-to-end Walking Skeleton
 
-- **Metadata:** Phase 2; size `M`; milestone `v0.1-skeleton`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 2; size `M`; milestone `v0.1-skeleton`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Own the first domain migration and demonstrate Vue → FastAPI → PostgreSQL → fixed proposal → fake decision/result using final-shaped contracts.
 - **In scope:** First minimal forward-compatible migration for final-named `support.users/customers/support_tickets/ticket_messages` plus required enum/index, demo login, Ticket/message persistence, explicit run endpoint, fake adapters and basic UI result.
 - **Out of scope:** SQLite/in-memory/temp schema, full DB-001A, commerce/RAG/workflow/approval tables, Gemini, embeddings, full LangGraph, real commerce transaction, full edit/payment sync.
@@ -357,6 +357,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Fake leakage, throwaway schema, frontend coupling to temporary behavior.
 - **Review checklist:** [ ] final contracts [ ] forward migration [ ] fake isolation [ ] browser smoke [ ] release guard.
 - **Completion report:** Use §11 with `Task ID: SKEL-001`.
+
+#### SKEL-001 completion report
+
+- Task ID: `SKEL-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Implemented the first runnable Vue → final-shaped FastAPI API → real PostgreSQL Walking Skeleton for UC-01, with explicit Ticket/run requests, fixed proposal review, deterministic fake action verification, approved-path `VERIFIED` → `RESOLVED` and rejected-path `ESCALATED`.
+- Files/modules changed: `pyproject.toml`, `compose.yaml`; backend application/config/database composition; new `backend/apps/support_api/walking_skeleton/{contracts,adapters,repository,service,router}.py`; support revision `infrastructure/migrations/support/versions/0001_walking_skeleton.py`; both Alembic environment transaction fixes; Vue API types/service and `HomeView.vue`; HTTP client binding fix; backend/frontend/E2E tests; `infrastructure/README.md`; and this task status/report.
+- Contract/schema impact: Adds only final-named `support.users`, `support.customers`, `support.support_tickets`, `support.ticket_messages`, their minimal required final enums/constraints/indexes and two synthetic demo identities. Commerce remains without domain tables; no workflow, approval, action, RAG or attachment table was created. Public paths and response/state names match the approved login, Ticket, explicit run and approval contracts.
+- Migrations created (if authorized): `0001_walking_skeleton` is the authorized first support-domain revision owned by `SKEL-001`; commerce has no revision. It runs with `support_owner`, retains `commerce` isolation and uses PostgreSQL only—no SQLite, temporary or throwaway schema.
+- Tests added/updated: Added backend approve/reject, Ticket/run idempotency/conflict, release-profile guard and router/fake import-boundary tests; added frontend final-public-path/auth test; added real HTTP/PostgreSQL E2E assertions for exact skeleton relations/enums, Ticket/message persistence and both terminal outcomes.
+- Required context loaded: This `SKEL-001` task section; `docs/ARCHITECTURE.md` §16 and §17; `docs/DATABASE_DESIGN.md` §18 and §20; `docs/API_CONTRACT.md` §11, §12 and §19; `docs/ROADMAP.md` §6 and §7; `docs/SECURITY.md` §16, §24 and §27.
+- Additional context loaded and reasons: Direct dependency completion reports for `FND-001`, `FND-002`, `DB-000` and `INF-001`; `docs/DATABASE_DESIGN.md` §6 and §10 plus `docs/API_CONTRACT.md` §7, §10 and §14 to avoid guessing final physical columns, status vocabulary, demo login and decision contract; command catalog/completion template; relevant existing backend/frontend/infrastructure source; browser local-testing instructions for the required UI smoke; direct dependent-ID grep for handoff.
+- Dependency completion reports reviewed: `FND-001`, `FND-002`, `DB-000` and `INF-001`; all were reviewer-approved, final status `DONE`, without blocking PLAN deviations.
+- Context intentionally not loaded: Entire `docs/PLAN.md`, unrelated specialist-document sections, unrelated task reports and implementation areas owned by Gemini/RAG/LangGraph, production approval/action, real commerce, attachment or later UC tasks.
+- Commands run and results: Installed only declared skeleton auth dependencies into the existing virtualenv; Ruff PASS; strict Mypy PASS (26 files); backend tests PASS (24); frontend typecheck PASS; frontend tests PASS (4 files, 8 tests); frontend build PASS (46 modules); bundle security scan PASS; `docker compose config` PASS; clean Compose build/start/health PASS; real HTTP/PostgreSQL E2E PASS for approve and reject; browser UI smoke PASS through `RESOLVED`/`COMPLETED`/`VERIFIED`; support Alembic `heads/current` both report `0001_walking_skeleton`; commerce head remains empty; `git diff --check` PASS; test container/volume cleanup PASS.
+- Security checks: Demo data uses `.test` identities and Argon2 password hashes; access tokens are short-lived signed Bearer tokens; customer and reviewer roles are separated; Ticket repository uses only `support_app` and parameterized SQL; no backend commerce import/query/write or external HTTP action exists; router/UI do not import fake implementations; frontend bundle has no internal token/secret; `v0_1` rejects fake providers; no Gemini, RAG, LangGraph, arbitrary URL/tool, attachment or chain-of-thought path was introduced.
+- Acceptance criteria evidence: Clean empty Phase-1 schemas migrate to exactly the four permitted support tables and six required final enums; Ticket and first message persist transactionally before any run; run creation is a separate public request with replay and active-run conflict behavior; fake adapters are behind protocols and composition root; approve resolves only after deterministic `VERIFIED`, reject escalates without action; UI shows the persisted Ticket, proposal and terminal result; release-profile fake guard is tested.
+- Risks/limitations remaining: Run/approval/proposal state is intentionally in-memory and lost on backend restart; only Ticket/message and terminal Ticket status persist. Demo auth, fixed proposal and fake verification are local/test scaffolding, explicitly not production evidence, and are replaced by their owning later tasks.
+- Deviations from PLAN: None. Two prerequisite integration defects were corrected without semantic change: Alembic now commits its session-level search path before the migration transaction, and the browser HTTP client binds native `window.fetch` correctly.
+- Follow-up tasks unblocked: After reviewer approval and `DONE`, `DB-001A`, `DB-002A` and `DB-001C` will have their declared prerequisites satisfied. None was started.
 
 ## 7. Phase 3 — Core database, auth and Ticket APIs
 

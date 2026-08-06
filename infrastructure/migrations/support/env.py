@@ -48,6 +48,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations(connection: Connection) -> None:
     connection.execute(text("SET search_path TO support, pg_catalog"))
+    connection.commit()
     configure_context(connection)
     with context.begin_transaction():
         context.run_migrations()

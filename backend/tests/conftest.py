@@ -15,7 +15,7 @@ def valid_settings_data() -> dict[str, object]:
         "CORRELATION_HEADER": "X-Correlation-ID",
         "WORKFLOW_REQUEST_TIMEOUT_SECONDS": 60,
         "WORKFLOW_FINALIZATION_RESERVE_SECONDS": 5,
-        "WORKFLOW_PROFILE": "v0_1",
+        "WORKFLOW_PROFILE": "walking_skeleton",
         "SUPPORT_DATABASE_URL": (
             "postgresql+asyncpg://support_app:test-password@localhost:5432/supportpilot"
         ),

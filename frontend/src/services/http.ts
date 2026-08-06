@@ -84,7 +84,7 @@ export class PublicApiClient {
     this.baseUrl = assertPublicApiBaseUrl(
       options.baseUrl ?? import.meta.env.VITE_PUBLIC_API_BASE_URL ?? DEFAULT_PUBLIC_API_BASE_URL,
     )
-    this.fetchImplementation = options.fetchImplementation ?? fetch
+    this.fetchImplementation = options.fetchImplementation ?? window.fetch.bind(window)
     this.getAccessToken = options.getAccessToken ?? (() => null)
   }
 

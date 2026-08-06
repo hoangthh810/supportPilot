@@ -144,6 +144,11 @@ class Settings(BaseSettings):
     def validate_runtime_invariants(self) -> Self:
         if not self.all_business_writes_require_approval:
             raise ValueError("ALL_BUSINESS_WRITES_REQUIRE_APPROVAL must be true")
+        if self.workflow_profile is WorkflowProfile.V0_1 and (
+            self.llm_provider is LlmProvider.FAKE
+            or self.embedding_provider is EmbeddingProvider.FAKE
+        ):
+            raise ValueError("the v0_1 release profile cannot use fake providers")
         if self.workflow_finalization_reserve_seconds >= self.workflow_request_timeout_seconds:
             raise ValueError("workflow finalization reserve must be below request timeout")
         if self.llm_provider is LlmProvider.GEMINI and self.gemini_api_key is None:
