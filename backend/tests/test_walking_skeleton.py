@@ -6,47 +6,58 @@ from fastapi.testclient import TestClient
 from pwdlib import PasswordHash
 
 from backend.apps.support_api.app import create_app
+from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
+from backend.apps.support_api.auth.contracts import AuthUser
+from backend.apps.support_api.auth.service import AuthService
 from backend.apps.support_api.core.config import Settings
 from backend.apps.support_api.walking_skeleton.adapters import (
     FakeActionAdapter,
     FakeAgentAdapter,
     FakeApprovalAdapter,
 )
-from backend.apps.support_api.walking_skeleton.contracts import (
-    Actor,
-    TicketRecord,
-    UserRecord,
-)
+from backend.apps.support_api.walking_skeleton.contracts import TicketRecord
 from backend.apps.support_api.walking_skeleton.service import SkeletonService
 
 CUSTOMER_ID = UUID("00000000-0000-4000-8000-000000000101")
 AGENT_ID = UUID("00000000-0000-4000-8000-000000000102")
 
 
-class MemoryTicketRepository:
+class MemoryAuthRepository:
     def __init__(self) -> None:
         password_hash = PasswordHash.recommended().hash("demo-password")
         self.users = {
-            "customer@example.test": UserRecord(
+            "customer@example.test": AuthUser(
                 CUSTOMER_ID,
                 "customer@example.test",
                 password_hash,
                 "CUSTOMER",
                 "ACTIVE",
+                UUID("00000000-0000-4000-8000-000000000201"),
             ),
-            "agent@example.test": UserRecord(
+            "agent@example.test": AuthUser(
                 AGENT_ID,
                 "agent@example.test",
                 password_hash,
                 "SUPPORT_AGENT",
                 "ACTIVE",
+                None,
             ),
         }
+
+    async def find_user_by_email(self, email: str) -> AuthUser | None:
+        return self.users.get(email)
+
+    async def find_user_by_id(self, user_id: UUID) -> AuthUser | None:
+        return next((user for user in self.users.values() if user.id == user_id), None)
+
+    async def record_successful_login(self, user_id: UUID) -> bool:
+        return any(user.id == user_id and user.status == "ACTIVE" for user in self.users.values())
+
+
+class MemoryTicketRepository:
+    def __init__(self) -> None:
         self.tickets: dict[UUID, TicketRecord] = {}
         self.replays: dict[tuple[UUID, str], TicketRecord] = {}
-
-    async def find_user_by_email(self, email: str) -> UserRecord | None:
-        return self.users.get(email)
 
     async def create_ticket(
         self,
@@ -94,14 +105,14 @@ class MemoryTicketRepository:
 
 def build_client(settings: Settings) -> tuple[TestClient, MemoryTicketRepository]:
     repository = MemoryTicketRepository()
+    auth_service = AuthService(settings=settings, repository=MemoryAuthRepository())
     service = SkeletonService(
-        settings=settings,
         repository=repository,
         agent=FakeAgentAdapter(),
         approval=FakeApprovalAdapter(),
         action=FakeActionAdapter(),
     )
-    return TestClient(create_app(settings, service)), repository
+    return TestClient(create_app(settings, service, auth_service)), repository
 
 
 def login(client: TestClient, email: str) -> str:

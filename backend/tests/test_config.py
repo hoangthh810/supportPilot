@@ -23,6 +23,20 @@ def test_support_database_must_use_runtime_role() -> None:
         build_settings(data)
 
 
+def test_access_token_ttl_is_fixed_to_fifteen_minutes() -> None:
+    data = valid_settings_data()
+    data["ACCESS_TOKEN_TTL_MINUTES"] = 30
+    with pytest.raises(ValidationError):
+        build_settings(data)
+
+
+def test_jwt_signing_key_requires_at_least_32_bytes() -> None:
+    data = valid_settings_data()
+    data["JWT_SIGNING_KEY"] = "too-short"
+    with pytest.raises(ValidationError, match="at least 32 bytes"):
+        build_settings(data)
+
+
 def test_gemini_provider_requires_api_key() -> None:
     data = valid_settings_data()
     data["LLM_PROVIDER"] = "gemini"

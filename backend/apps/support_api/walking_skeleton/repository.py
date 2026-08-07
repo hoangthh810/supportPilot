@@ -5,41 +5,16 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
 from backend.apps.support_api.core.errors import ApiError
 from backend.apps.support_api.walking_skeleton.contracts import (
-    Actor,
     TicketRecord,
-    UserRecord,
 )
 
 
 class PostgresTicketRepository:
     def __init__(self, engine: AsyncEngine) -> None:
         self._engine = engine
-
-    async def find_user_by_email(self, email: str) -> UserRecord | None:
-        async with self._engine.connect() as connection:
-            row = (
-                await connection.execute(
-                    text(
-                        """
-                        SELECT id, email::text, password_hash, role::text, status::text
-                        FROM support.users
-                        WHERE email = :email
-                        """
-                    ),
-                    {"email": email},
-                )
-            ).mappings().one_or_none()
-        if row is None:
-            return None
-        return UserRecord(
-            id=row["id"],
-            email=row["email"],
-            password_hash=row["password_hash"],
-            role=row["role"],
-            status=row["status"],
-        )
 
     async def create_ticket(
         self,

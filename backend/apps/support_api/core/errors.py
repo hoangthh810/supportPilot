@@ -27,6 +27,7 @@ class ApiError(Exception):
         message: str,
         retryable: bool = False,
         details: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -34,6 +35,7 @@ class ApiError(Exception):
         self.message = message
         self.retryable = retryable
         self.details = details or {}
+        self.headers = headers or {}
 
 
 def _error_response(request: Request, error: ApiError) -> JSONResponse:
@@ -44,7 +46,11 @@ def _error_response(request: Request, error: ApiError) -> JSONResponse:
         correlation_id=get_correlation_id(request),
         details=error.details,
     )
-    return JSONResponse(status_code=error.status_code, content=envelope.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=error.status_code,
+        content=envelope.model_dump(mode="json"),
+        headers=error.headers,
+    )
 
 
 async def api_error_handler(request: Request, exception: Exception) -> JSONResponse:
@@ -91,4 +97,3 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)
-

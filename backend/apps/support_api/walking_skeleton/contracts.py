@@ -4,21 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 from uuid import UUID
 
-
-@dataclass(frozen=True, slots=True)
-class Actor:
-    id: UUID
-    role: str
-    status: str
-
-
-@dataclass(frozen=True, slots=True)
-class UserRecord:
-    id: UUID
-    email: str
-    password_hash: str
-    role: str
-    status: str
+from backend.apps.support_api.auth.contracts import AuthenticatedActor
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,8 +26,6 @@ class Proposal:
 
 
 class TicketRepository(Protocol):
-    async def find_user_by_email(self, email: str) -> UserRecord | None: ...
-
     async def create_ticket(
         self,
         *,
@@ -53,7 +37,7 @@ class TicketRepository(Protocol):
     ) -> TicketRecord: ...
 
     async def get_ticket_for_actor(
-        self, *, ticket_id: UUID, actor: Actor
+        self, *, ticket_id: UUID, actor: AuthenticatedActor
     ) -> TicketRecord | None: ...
 
     async def set_ticket_status(self, *, ticket_id: UUID, status: str) -> None: ...

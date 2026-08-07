@@ -4,35 +4,14 @@ from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
+from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
+from backend.apps.support_api.auth.dependencies import require_roles
 from backend.apps.support_api.core.correlation import get_correlation_id
-from backend.apps.support_api.core.errors import ApiError
-from backend.apps.support_api.walking_skeleton.contracts import Actor
 from backend.apps.support_api.walking_skeleton.service import SkeletonService
 
 router = APIRouter(prefix="/api/v1")
-bearer = HTTPBearer(auto_error=False)
-
-
-class ActorResponse(BaseModel):
-    id: UUID
-    role: str
-    status: str
-
-
-class LoginRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=320)
-    password: str = Field(min_length=1, max_length=256)
-
-
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: Literal["Bearer"] = "Bearer"
-    expires_in_seconds: int
-    actor: ActorResponse
-    correlation_id: str
 
 
 class TicketCreateRequest(BaseModel):
@@ -105,34 +84,6 @@ def get_skeleton_service(request: Request) -> SkeletonService:
     return service
 
 
-def get_actor(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
-    service: Annotated[SkeletonService, Depends(get_skeleton_service)],
-) -> Actor:
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise ApiError(
-            status_code=401,
-            code="AUTH_UNAUTHENTICATED",
-            message="A valid access token is required.",
-        )
-    return service.authenticate(credentials.credentials)
-
-
-@router.post("/auth/login", response_model=LoginResponse)
-async def login(
-    payload: LoginRequest,
-    request: Request,
-    service: Annotated[SkeletonService, Depends(get_skeleton_service)],
-) -> LoginResponse:
-    result = await service.login(email=str(payload.email), password=payload.password)
-    return LoginResponse(
-        access_token=result.access_token,
-        expires_in_seconds=result.expires_in_seconds,
-        actor=ActorResponse(id=result.actor.id, role=result.actor.role, status=result.actor.status),
-        correlation_id=get_correlation_id(request),
-    )
-
-
 @router.post(
     "/tickets",
     response_model=TicketCreateResponse,
@@ -141,7 +92,7 @@ async def login(
 async def create_ticket(
     payload: TicketCreateRequest,
     request: Request,
-    actor: Annotated[Actor, Depends(get_actor)],
+    actor: Annotated[Actor, Depends(require_roles("customer"))],
     service: Annotated[SkeletonService, Depends(get_skeleton_service)],
     idempotency_key: Annotated[
         str, Header(alias="Idempotency-Key", min_length=1, max_length=128)
@@ -171,7 +122,7 @@ async def create_agent_run(
     ticket_id: UUID,
     payload: AgentRunRequest,
     request: Request,
-    actor: Annotated[Actor, Depends(get_actor)],
+    actor: Annotated[Actor, Depends(require_roles("customer"))],
     service: Annotated[SkeletonService, Depends(get_skeleton_service)],
     idempotency_key: Annotated[
         str, Header(alias="Idempotency-Key", min_length=1, max_length=128)
@@ -201,7 +152,10 @@ async def create_agent_run(
 async def get_approval_request(
     approval_id: UUID,
     request: Request,
-    actor: Annotated[Actor, Depends(get_actor)],
+    actor: Annotated[
+        Actor,
+        Depends(require_roles("support_agent", "support_manager", "admin")),
+    ],
     service: Annotated[SkeletonService, Depends(get_skeleton_service)],
 ) -> ApprovalDetailResponse:
     state = service.get_approval(actor=actor, approval_id=approval_id)
@@ -227,7 +181,10 @@ async def decide_approval(
     approval_id: UUID,
     payload: ApprovalDecisionRequest,
     request: Request,
-    actor: Annotated[Actor, Depends(get_actor)],
+    actor: Annotated[
+        Actor,
+        Depends(require_roles("support_agent", "support_manager", "admin")),
+    ],
     service: Annotated[SkeletonService, Depends(get_skeleton_service)],
 ) -> ApprovalDecisionResponse:
     result = await service.decide(

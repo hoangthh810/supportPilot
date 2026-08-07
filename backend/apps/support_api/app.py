@@ -5,6 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from backend.apps.support_api.auth.repository import PostgresAuthRepository
+from backend.apps.support_api.auth.router import router as auth_router
+from backend.apps.support_api.auth.service import AuthService
 from backend.apps.support_api.core.config import Settings, WorkflowProfile, load_settings
 from backend.apps.support_api.core.correlation import CorrelationIdMiddleware
 from backend.apps.support_api.core.database import create_support_engine
@@ -24,19 +27,32 @@ from backend.apps.support_api.walking_skeleton.service import SkeletonService
 def create_app(
     settings: Settings | None = None,
     skeleton_service: SkeletonService | None = None,
+    auth_service: AuthService | None = None,
 ) -> FastAPI:
     runtime_settings = settings or load_settings()
     configure_logging(runtime_settings)
 
     engine: AsyncEngine | None = None
-    if (
+    skeleton_needs_engine = (
         runtime_settings.workflow_profile is WorkflowProfile.WALKING_SKELETON
         and skeleton_service is None
-    ):
+    )
+    if auth_service is None or skeleton_needs_engine:
         engine = create_support_engine(runtime_settings)
+
+    if auth_service is None:
+        if engine is None:
+            raise RuntimeError("authentication composition requires a support engine")
+        auth_service = AuthService(
+            settings=runtime_settings,
+            repository=PostgresAuthRepository(engine),
+        )
+
+    if skeleton_needs_engine:
+        if engine is None:
+            raise RuntimeError("Walking Skeleton composition requires a support engine")
         repository = PostgresTicketRepository(engine)
         skeleton_service = SkeletonService(
-            settings=runtime_settings,
             repository=repository,
             agent=FakeAgentAdapter(),
             approval=FakeApprovalAdapter(),
@@ -51,6 +67,7 @@ def create_app(
 
     app = FastAPI(title=runtime_settings.app_name, version="0.1.0", lifespan=lifespan)
     app.state.settings = runtime_settings
+    app.state.auth_service = auth_service
     app.state.skeleton_service = skeleton_service
     app.add_middleware(
         CorrelationIdMiddleware,
@@ -65,6 +82,7 @@ def create_app(
     )
     register_error_handlers(app)
     app.include_router(health_router)
+    app.include_router(auth_router)
     if skeleton_service is not None:
         app.include_router(skeleton_router)
     return app

@@ -140,6 +140,20 @@ class Settings(BaseSettings):
             raise ValueError("secret values must not be empty")
         return value
 
+    @field_validator("jwt_signing_key")
+    @classmethod
+    def jwt_signing_key_must_be_strong(cls, value: SecretStr) -> SecretStr:
+        if len(value.get_secret_value().encode("utf-8")) < 32:
+            raise ValueError("JWT_SIGNING_KEY must be at least 32 bytes")
+        return value
+
+    @field_validator("access_token_ttl_minutes")
+    @classmethod
+    def access_token_ttl_must_be_fifteen_minutes(cls, value: int) -> int:
+        if value != 15:
+            raise ValueError("ACCESS_TOKEN_TTL_MINUTES must be 15")
+        return value
+
     @model_validator(mode="after")
     def validate_runtime_invariants(self) -> Self:
         if not self.all_business_writes_require_approval:

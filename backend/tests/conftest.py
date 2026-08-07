@@ -21,7 +21,7 @@ def valid_settings_data() -> dict[str, object]:
         ),
         "DB_POOL_SIZE": 10,
         "DB_POOL_TIMEOUT_SECONDS": 5,
-        "JWT_SIGNING_KEY": "test-jwt-signing-key",
+        "JWT_SIGNING_KEY": "test-jwt-signing-key-at-least-32-bytes",
         "JWT_ISSUER": "supportpilot",
         "ACCESS_TOKEN_TTL_MINUTES": 15,
         "PASSWORD_HASH_SCHEME": "argon2",

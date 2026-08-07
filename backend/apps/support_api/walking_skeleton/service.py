@@ -2,32 +2,18 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
-from typing import Any
 from uuid import UUID, uuid4
 
-import jwt
-from jwt import InvalidTokenError
-from pwdlib import PasswordHash
-
-from backend.apps.support_api.core.config import Settings
+from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
 from backend.apps.support_api.core.errors import ApiError
 from backend.apps.support_api.walking_skeleton.contracts import (
     ActionAdapter,
-    Actor,
     AgentAdapter,
     ApprovalAdapter,
     Proposal,
     TicketRecord,
     TicketRepository,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class LoginResult:
-    access_token: str
-    expires_in_seconds: int
-    actor: Actor
 
 
 @dataclass(slots=True)
@@ -60,76 +46,19 @@ class SkeletonService:
     def __init__(
         self,
         *,
-        settings: Settings,
         repository: TicketRepository,
         agent: AgentAdapter,
         approval: ApprovalAdapter,
         action: ActionAdapter,
     ) -> None:
-        self._settings = settings
         self._repository = repository
         self._agent = agent
         self._approval = approval
         self._action = action
-        self._password_hash = PasswordHash.recommended()
         self._lock = asyncio.Lock()
         self._active_runs: dict[UUID, RunState] = {}
         self._run_replays: dict[tuple[UUID, UUID, str], RunState] = {}
         self._approvals: dict[UUID, RunState] = {}
-
-    async def login(self, *, email: str, password: str) -> LoginResult:
-        user = await self._repository.find_user_by_email(email.strip().lower())
-        if user is None or user.status != "ACTIVE":
-            raise self._invalid_credentials()
-        try:
-            password_matches = self._password_hash.verify(password, user.password_hash)
-        except Exception as error:
-            raise self._invalid_credentials() from error
-        if not password_matches:
-            raise self._invalid_credentials()
-
-        actor = Actor(id=user.id, role=user.role.lower(), status=user.status.lower())
-        expires_in_seconds = self._settings.access_token_ttl_minutes * 60
-        now = datetime.now(UTC)
-        access_token = jwt.encode(
-            {
-                "sub": str(actor.id),
-                "role": actor.role,
-                "status": actor.status,
-                "iss": self._settings.jwt_issuer,
-                "iat": now,
-                "exp": now + timedelta(seconds=expires_in_seconds),
-                "profile": "walking_skeleton",
-            },
-            self._settings.jwt_signing_key.get_secret_value(),
-            algorithm="HS256",
-        )
-        return LoginResult(
-            access_token=access_token,
-            expires_in_seconds=expires_in_seconds,
-            actor=actor,
-        )
-
-    def authenticate(self, token: str) -> Actor:
-        try:
-            payload: dict[str, Any] = jwt.decode(
-                token,
-                self._settings.jwt_signing_key.get_secret_value(),
-                algorithms=["HS256"],
-                issuer=self._settings.jwt_issuer,
-                options={"require": ["sub", "role", "status", "exp", "iss"]},
-            )
-            return Actor(
-                id=UUID(str(payload["sub"])),
-                role=str(payload["role"]),
-                status=str(payload["status"]),
-            )
-        except (InvalidTokenError, KeyError, TypeError, ValueError) as error:
-            raise ApiError(
-                status_code=401,
-                code="AUTH_UNAUTHENTICATED",
-                message="A valid access token is required.",
-            ) from error
 
     async def create_ticket(
         self,
@@ -275,17 +204,9 @@ class SkeletonService:
         if actor.status != "active" or actor.role not in allowed:
             raise ApiError(
                 status_code=403,
-                code="AUTH_FORBIDDEN",
+                code="FORBIDDEN",
                 message="The authenticated actor cannot perform this operation.",
             )
-
-    @staticmethod
-    def _invalid_credentials() -> ApiError:
-        return ApiError(
-            status_code=401,
-            code="INVALID_CREDENTIALS",
-            message="The email or password is invalid.",
-        )
 
     @staticmethod
     def _decision_result(state: RunState) -> DecisionResult:
