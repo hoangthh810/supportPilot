@@ -40,3 +40,16 @@ The UI is available at `http://localhost:5173`. Synthetic credentials are
 `customer@example.test` / `demo-password` and `agent@example.test` / `demo-password`.
 The fake action never calls or writes to Mock-Commerce and its `VERIFIED` result is not
 release evidence. The `v0_1` release profile rejects fake providers at startup.
+
+## Local authentication
+
+`AUTH-001` provides `POST /api/v1/auth/login` and `GET /api/v1/auth/me` with a
+15-minute HS256 access token. `JWT_SIGNING_KEY` must contain at least 32 bytes. There is
+no refresh-token endpoint in v0.1, and protected requests reload the current user and
+customer scope from PostgreSQL so disabling an account invalidates an existing token.
+
+The v0.1 login limiter permits 10 attempts per 60-second window for each hashed
+client-IP and normalized-email pair. It is process-local for the single-backend local
+topology, never retains the raw key inputs, and emits `X-RateLimit-Limit`,
+`X-RateLimit-Remaining`, `X-RateLimit-Reset` and, when limited, `Retry-After`. A limited
+request returns the generic `INVALID_CREDENTIALS` body to avoid account enumeration.

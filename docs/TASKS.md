@@ -383,7 +383,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### DB-001A — Core support identity and Ticket persistence
 
-- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Extend skeleton data into final `users/customers/support_tickets/ticket_messages` contract.
 - **In scope:** Plaintext synthetic columns, FKs/constraints/indexes, forward backfill and repositories.
 - **Out of scope:** Field cipher/lookup-hash, address, attachment, workflow hoặc knowledge tables.
@@ -404,9 +404,9 @@ Nếu phát hiện mâu thuẫn:
 #### DB-001A completion report
 
 - Task ID: `DB-001A`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Upgraded the four final-named Walking Skeleton support tables to the complete DB-001A physical contract through an in-place forward Alembic revision, preserving existing rows and identifiers without dropping or recreating a table.
+- Goal achieved: Upgraded the four final-named Walking Skeleton support tables to the complete DB-001A physical contract through an in-place forward Alembic revision, preserving existing rows and identifiers without dropping or recreating a table; all acceptance criteria, migration checks, repository/constraint tests and security checks were approved by the reviewer.
 - Files/modules changed: `infrastructure/migrations/support/versions/0002_db001a_core_support.py`; `infrastructure/tests/run_db001a_integration.py`; `backend/tests/test_db001a_migration.py`; `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: Adds UUID generation defaults to all four primary keys; adds nullable `users.last_login_at`, `customers.phone`, `support_tickets.assigned_user_id` and `support_tickets.closed_at`; adds the same-schema assigned-user `RESTRICT` FK plus v0.1 intent and closed-time structural checks. Existing enums, unique constraints, indexes, Ticket resolution invariant and all skeleton data remain intact. No attachment, cipher/hash, address, workflow, knowledge or commerce object was added.
 - Migrations created (if authorized): `0002_db001a_core_support`, revising `0001_walking_skeleton`. Upgrade uses only `ALTER COLUMN`, `ADD COLUMN`, `ADD FOREIGN KEY` and `ADD CHECK`; downgrade removes only DB-001A additions and restores skeleton UUID-default behavior. Neither direction drops or recreates a skeleton table.
@@ -420,11 +420,11 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: A fixture created while the database was at `0001_walking_skeleton` compared byte-for-value equal on every pre-existing field after `0002`; catalog assertions prove the exact DB-001A columns, UUID defaults, named checks/FKs/indexes and zero cross-schema FK; invalid structural writes fail; repository create/replay/customer isolation/status operations pass under `support_app`; AST guards prove no table replacement in either migration direction.
 - Risks/limitations remaining: Plaintext identity/Ticket/message fields are explicitly synthetic-only until the deferred v1.0 encryption migration. Downgrading intentionally discards values in the four DB-001A-added nullable columns, while preserving all pre-existing skeleton fields and rows. The current Walking Skeleton repository remains temporary and its replacement belongs to AUTH-001/TKT-001.
 - Deviations from PLAN: None. The first integration run exposed only a test-adapter detail: asyncpg returns PostgreSQL internal `char` catalog fields as bytes; the assertion now normalizes that representation without changing schema semantics, and the complete rerun passed.
-- Follow-up tasks unblocked: Once reviewer approval changes `DB-001A` to `DONE`, `AUTH-001` and `DB-001B3` will have all declared dependencies satisfied; the DB-001A dependency will also be satisfied for `TKT-001`, `SEED-001`, `DB-001B1` and other listed downstream tasks whose remaining dependencies still apply. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and `DB-001A` is now `DONE`; `AUTH-001` and `DB-001B3` have all declared dependencies satisfied. The DB-001A dependency is also satisfied for `TKT-001`, `SEED-001`, `DB-001B1` and other listed downstream tasks whose remaining dependencies still apply. None was started.
 
 ### AUTH-001 — Access-token authentication and RBAC
 
-- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Replace demo auth with local JWT access-token login, RBAC and demo accounts.
 - **In scope:** Login/me, Argon2 verification, 15-minute JWT, disabled accounts, role dependencies and rate limit.
 - **Out of scope:** Refresh rotation, OAuth/SSO or production identity provider.
@@ -441,6 +441,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Role bypass, token handling bug, demo credentials leaking outside demo docs.
 - **Review checklist:** [ ] API contract [ ] RBAC service check [ ] expiry/disabled [ ] rate limit [ ] redaction.
 - **Completion report:** Use §11 with `Task ID: AUTH-001`.
+
+#### AUTH-001 completion report
+
+- Task ID: `AUTH-001`
+- Final status: `DONE`
+- Owner: Unassigned
+- Goal achieved: Replaced Walking Skeleton demo authentication with a dedicated PostgreSQL-backed local auth boundary providing contract-shaped login/me, 15-minute issuer-validated JWT access tokens, current-state account/customer checks, router/service RBAC and a generic anti-enumeration login rate limit; all acceptance criteria, quality gates, Compose/E2E regressions and security checks were approved by the reviewer.
+- Files/modules changed: New `backend/apps/support_api/auth/{contracts,dependencies,rate_limit,repository,router,service}.py`; backend composition and safe error-header support; Walking Skeleton contracts/router/service/repository integration to consume authenticated actors without owning auth; `.env.example`, `.env.compose.example`, auth/config/skeleton tests, `infrastructure/tests/run_auth_integration.py`, DB-001A integration compatibility, `infrastructure/README.md`, and this task status/report.
+- Contract/schema impact: Implements `POST /api/v1/auth/login` and `GET /api/v1/auth/me`; preserves the documented login response and adds safe principal/customer-scope projection for me. Public failures use only `INVALID_CREDENTIALS`, `ACCOUNT_DISABLED`, `UNAUTHENTICATED` and `FORBIDDEN`; rate-limit denial is HTTP 429 with the generic `INVALID_CREDENTIALS` envelope plus rate headers, avoiding a new public code. No schema, Ticket API or refresh-token contract changed.
+- Migrations created (if authorized): None. AUTH-001 uses the approved DB-001A `support.users/customers` columns and updates `last_login_at`/`updated_at` through `support_app` only.
+- Tests added/updated: Added auth service/API/security tests for exact login/me responses, issuer/expiry/role validation, current DB role/status/customer scope, disabled login and post-issue invalidation, router/service RBAC, generic unknown/wrong-password behavior, 10/minute limiting and bounded identity memory, strong JWT config, absent secret/token/password output and no refresh endpoint. Updated Walking Skeleton regressions and DB-001A repository integration for the separated auth repository.
+- Required context loaded: This `AUTH-001` task section; `docs/API_CONTRACT.md` §2, §3, §4, §10 and §17; `docs/SECURITY.md` §4, §5, §16, §17 and §21; `docs/DATABASE_DESIGN.md` §6.1 and §6.2.
+- Additional context loaded and reasons: Direct dependency completion reports for `DB-001A` and `SKEL-001`; the single `/auth/me` row in `docs/API_CONTRACT.md` §7 because required §10 defines login but not the task-required me projection; current app composition, settings/error/logging foundations, Walking Skeleton auth/repository usage, backend tests, Compose topology and infrastructure E2E harness needed to replace auth without implementing TKT-001; downstream dependency headings only for completion handoff.
+- Dependency completion reports reviewed: `DB-001A` and `SKEL-001`; both are reviewer-approved with final status `DONE`, no blocking PLAN deviation, approved Argon2 synthetic identities and the required runtime support-role boundary.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; unrelated specialist-document sections and completion reports; frontend implementation; TKT-001 implementation; Mock-Commerce/internal auth; workflow/RAG/approval production code; and every other later task.
+- Commands run and results: Targeted Ruff/tests PASS; final Ruff PASS; strict Mypy PASS (35 source files); full backend tests PASS (44); `docker compose config` PASS; clean isolated Compose build/start/health PASS; real PostgreSQL/HTTP AUTH-001 integration PASS for login/me, Argon2, `last_login_at`, current customer scope, tampered JWT, disabled account and 10/minute limit; Walking Skeleton approve/reject regression PASS; final hardened AUTH integration rerun PASS; `git diff --check` PASS. Both isolated Compose runs were removed with their networks and volumes.
+- Security checks: HS256 accepts only the configured issuer/key and requires `sub/role/iat/exp/jti`; JWT key is fail-fast at 32 bytes minimum and access TTL is fixed at 15 minutes; every protected request reloads user/customer state from PostgreSQL; unknown accounts execute dummy Argon2 verification; login keys are SHA-256 fingerprints of client IP plus normalized email and never retain raw inputs; repository SQL is static and parameterized; backend log scans found no password, raw JWT/Bearer token or signing key; no secret was committed or returned.
+- Acceptance criteria evidence: Customer, agent and admin role tests prove router and service enforcement; current-role mismatch invalidates an issued token; disabled state returns `ACCOUNT_DISABLED` at login only after correct-password verification and on every protected operation; real customer identity resolves to the approved customer row; demo database hashes remain Argon2; login and me return exact safe envelopes with correlation; rate-limit headers and generic body pass; all 44 backend tests and both real-stack regressions pass.
+- Risks/limitations remaining: The limiter is intentionally process-local for the single-backend v0.1 local topology and resets on restart; distributed enforcement belongs after v0.1. It keys each 60-second window by the hash of client IP plus normalized email and caps tracked active identities at 10,000. There is no refresh token, OAuth/SSO or production identity provider. The ignored local `.env.compose` currently has a 27-character JWT key and must be replaced by a value of at least 32 bytes before the next normal Compose start; it was not modified by this task.
+- Deviations from PLAN: None. One startup integration defect was corrected during testing: Pydantic does not coerce an environment string into `Literal[15]`, so the field remains typed `int` with an equivalent fail-fast `must equal 15` validator. An initial test-only response annotation was also corrected; final quality and real-stack reruns passed.
+- Follow-up tasks unblocked: Reviewer approval is recorded and `AUTH-001` is now `DONE`; `TKT-001` has all declared dependencies satisfied. AUTH-001 also satisfies its dependency edge for `KB-001`, `AG-001`, `AG-003` and later security/E2E tasks whose remaining dependencies still apply. None was started.
 
 ### TKT-001 — Final Ticket and message APIs
 

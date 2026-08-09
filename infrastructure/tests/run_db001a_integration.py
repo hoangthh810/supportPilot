@@ -15,7 +15,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from backend.apps.support_api.walking_skeleton.contracts import Actor
+from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
+from backend.apps.support_api.auth.repository import PostgresAuthRepository
 from backend.apps.support_api.walking_skeleton.repository import PostgresTicketRepository
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -398,7 +399,8 @@ async def assert_constraints(runtime_engine: AsyncEngine) -> None:
 
 async def assert_repository(runtime_engine: AsyncEngine) -> None:
     repository = PostgresTicketRepository(runtime_engine)
-    user = await repository.find_user_by_email("customer@example.test")
+    auth_repository = PostgresAuthRepository(runtime_engine)
+    user = await auth_repository.find_user_by_email("customer@example.test")
     assert user is not None
     assert user.id == DEMO_CUSTOMER_USER_ID
     assert user.password_hash.startswith("$argon2")
