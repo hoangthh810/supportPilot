@@ -1,7 +1,8 @@
 # SupportPilot local infrastructure
 
 The Compose topology is owned by `INF-001`. `SKEL-001` adds the first support-domain
-revision and a temporary Walking Skeleton profile. There is still no commerce domain,
+revision and a temporary Walking Skeleton profile. `DB-002A` adds only the UC-01
+commerce persistence contract; there is still no commerce business endpoint,
 workflow/approval persistence, queue or Redis service.
 
 ## Ownership boundaries
@@ -20,7 +21,20 @@ owned by `SKEL-001`. The following `DB-001A` revision upgrades those same final-
 `support.users`, `support.customers`, `support.support_tickets` and
 `support.ticket_messages` tables in place. It adds the remaining identity/Ticket columns,
 UUID defaults, foreign key and structural checks without dropping or recreating a skeleton
-table, so existing synthetic data is preserved. The commerce Alembic branch remains empty.
+table, so existing synthetic data is preserved. The commerce Alembic branch begins with
+`0001_db002a_commerce`, owned by `DB-002A`, and creates exactly
+`customers/products/orders/order_items/payments/idempotency_records/audit_logs` plus the
+documented commerce enums, constraints and indexes. It contains no seed data or UC-02+
+table. `commerce_app` has no support-schema privilege, while commerce idempotency and
+audit rows are append-only through runtime grants.
+
+The isolated DB-002A integration harness is
+`infrastructure/tests/run_db002a_integration.py`. It requires only the commerce owner
+migration DSN plus `commerce_app` and `support_app` runtime DSNs, performs a
+downgrade/upgrade round trip, and validates the exact physical contract, grants,
+constraints, optimistic versions and transaction rollback. Run it only against the
+disposable Compose test database because it intentionally downgrades the commerce branch
+to `base` during verification.
 
 ## Walking Skeleton commands
 

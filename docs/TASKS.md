@@ -465,7 +465,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### TKT-001 — Final Ticket and message APIs
 
-- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Replace skeleton Ticket repository/service with create/list/detail and dual message/resume contract.
 - **In scope:** Ownership, Ticket+first-message transaction, idempotency, list/detail projections, attachment pre-validation and message commit-before-resume orchestration port.
 - **Out of scope:** Agent node logic, attachment storage/fetch/upload or PDF upload.
@@ -481,15 +481,15 @@ Nếu phát hiện mâu thuẫn:
 - **Required tests/commands:** `CMD-BE-QUALITY`, `CMD-CONTRACT` Ticket/message integration subset.
 - **Security:** Customer isolation, masked projections, rate limit, no checkpoint/CoT exposure.
 - **Risks:** Transaction/resume coupling, duplicate message, hidden create-run side effect.
-- **Review checklist:** [ ] explicit trigger [ ] dual response [ ] ownership [ ] replay [ ] failure persistence.
+- **Review checklist:** [x] explicit trigger [x] dual response [x] ownership [x] replay [x] failure persistence.
 - **Completion report:** Use §11 with `Task ID: TKT-001`.
 
 #### TKT-001 completion report
 
 - Task ID: `TKT-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Replaced the Walking Skeleton-owned Ticket create path with a dedicated final Ticket API/service/repository boundary providing transactional create, scoped paginated list, safe detail and the v0.1 dual message/resume contract, while retaining the explicit separate Agent Run trigger and introducing no hidden run creation.
+- Goal achieved: Replaced the Walking Skeleton-owned Ticket create path with a dedicated final Ticket API/service/repository boundary providing transactional create, scoped paginated list, safe detail and the v0.1 dual message/resume contract, while retaining the explicit separate Agent Run trigger and introducing no hidden run creation; the reviewer approved the implementation and all acceptance criteria.
 - Files/modules changed: New `backend/apps/support_api/tickets/{contracts,rate_limit,repository,router,service}.py`; backend application composition; Walking Skeleton contracts/router/service plus repository compatibility import; Ticket test fakes and contract tests; Walking Skeleton regression tests; DB-001A repository compatibility harness; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: Implements final `POST/GET /api/v1/tickets`, `GET /api/v1/tickets/{id}` and `POST /api/v1/tickets/{id}/messages` behavior over the existing DB-001A tables. Omitted/empty attachment references follow the normal path; any non-empty list returns exact `422 ATTACHMENTS_NOT_SUPPORTED`, `retryable=false`, before persistence, limiter consumption or resume. Valid messages commit before the resume port; message-only returns `201`, same-run resume and missing-invariant paths return `200`, and timeout returns `504 WORKFLOW_REQUEST_TIMEOUT` while retaining the message and escalating the Ticket. No attachment, workflow, audit or idempotency table was added.
 - Migrations created (if authorized): None. TKT-001 uses only the reviewer-approved final-named `support.support_tickets` and `support.ticket_messages` DB-001A contract.
@@ -503,13 +503,13 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: Ticket and first message share one repository transaction and create never calls the resume/run boundary; scoped list/detail and idempotent replay/conflict tests pass; both valid attachment-empty forms persist normally; non-empty attachment tests prove exact rejection with unchanged messages and no resume; same key produces one message and one resume; missing checkpoint/invariant keeps the message, creates no run and escalates; timeout keeps the message, escalates and replays the same typed failure without a second resume.
 - Risks/limitations remaining: The real same-run workflow adapter, run `FAILED` transition and audit event are intentionally owned by later workflow/audit tasks; the default port therefore treats a waiting Ticket without that adapter as the documented invariant failure and never creates a run. Exact response replay is process-local until `DB-001B3` supplies approved durable response storage; DB-level resource replay still prevents duplicate Ticket/message persistence after restart. Per-request `correlation_id` is intentionally fresh on HTTP replay. Docker Desktop was unavailable, so the updated PostgreSQL compatibility harness was type/lint checked but not rerun against a live database in this task session.
 - Deviations from PLAN: None. Durable exact response persistence and workflow/audit state are staged behind their declared later database/workflow tasks rather than being implemented early by TKT-001.
-- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, TKT-001 will satisfy its dependency edge for `AG-001`, `AG-003`, `WEB-001`, `E2E-001C`, `E2E-001D` and `SEC-001`; their remaining dependencies still apply. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and `TKT-001` is now `DONE`; its dependency edge is satisfied for `AG-001`, `AG-003`, `WEB-001`, `E2E-001C`, `E2E-001D` and `SEC-001`, whose remaining dependencies still apply. None was started.
 
 ## 8. Phase 4 — Mock-Commerce and Order Resolution
 
 ### DB-002A — UC-01 commerce schema
 
-- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Add the exact physical seven-table commerce persistence contract required by UC-01.
 - **In scope:** `customers/products/orders/order_items/payments/idempotency_records/audit_logs`, named enums, UUID/TIMESTAMPTZ/NUMERIC(18,2)/uppercase CHAR(3), customer-scoped indexes, partial transaction uniqueness, RESTRICT FKs, expected versions and append-only grants.
 - **Out of scope:** Shipping, refund, warranty, support imports or cross-schema FK.
@@ -526,6 +526,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** FK/index order, cross-schema leak, status/version mismatch.
 - **Review checklist:** [ ] exact physical schema [ ] no extra UC tables [ ] constraints/indexes/FK behavior [ ] grants/immutability [ ] transaction tests.
 - **Completion report:** Use §11 with `Task ID: DB-002A`.
+
+#### DB-002A completion report
+
+- Task ID: `DB-002A`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Added the first commerce-domain revision and exact seven-table UC-01 persistence contract, with commerce-owned SQLAlchemy metadata, named enums, constrained money/currency/synthetic fields, customer-scoped indexes, same-schema `RESTRICT` foreign keys, optimistic versions, partial transaction-reference uniqueness, append-only idempotency/audit grants and isolated PostgreSQL verification.
+- Files/modules changed: New `backend/apps/mock_commerce_api/persistence/models.py` and package markers; commerce Alembic metadata wiring and `infrastructure/migrations/commerce/versions/0001_db002a_commerce.py`; static migration/model tests; real PostgreSQL integration harness; reverse import-boundary test; `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Creates only `commerce.customers`, `products`, `orders`, `order_items`, `payments`, `idempotency_records` and `audit_logs`; six named commerce enums; documented UUID/TIMESTAMPTZ/NUMERIC(18,2)/uppercase CHAR(3) columns; exact unique/check/index/FK behavior; and no cross-schema relation. `orders` and `payments` alone carry optimistic `version`; non-null payment transaction references are uniquely indexed; idempotency and audit rows are runtime append-only. No seed, support object, endpoint or UC-02+ table was added.
+- Migrations created (if authorized): `0001_db002a_commerce`, the authorized first commerce-domain revision with `down_revision=None`. It runs only as `commerce_owner`, upgrades/downgrades transactionally, leaves the final head at `0001_db002a_commerce`, and fully removes its seven tables and six enums on downgrade.
+- Tests added/updated: Added seven static metadata/migration contract tests plus a real PostgreSQL round-trip harness covering exact tables/columns/types/enums/indexes/FKs, unique and check constraints, customer isolation, support-role denial, append-only grants, expected-version one-winner updates, stale-version zero-row behavior, atomic state/idempotency/audit commit and rollback-on-conflict; added Mock-Commerce-to-Support import isolation coverage.
+- Required context loaded: This `DB-002A` task section; `docs/DATABASE_DESIGN.md` §3, §9, §12, §13, §14 and §18; `docs/ARCHITECTURE.md` §10, §11 and §12; `docs/SECURITY.md` §6, §7, §8 and §16.
+- Additional context loaded and reasons: Direct dependency completion reports for `DB-000`, `INF-001` and `SKEL-001`; command catalog/completion template; current commerce Alembic shell, bootstrap/default grants, Compose credential wiring, Phase-1 Mock-Commerce health process, existing migration-test patterns and infrastructure README needed to add the first commerce revision without replacing valid configuration; direct dependent-ID rows only for handoff.
+- Dependency completion reports reviewed: `DB-000`, `INF-001` and `SKEL-001`; all are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and provide the isolated owner/runtime roles, extension-enabled commerce migration shell and first-domain-migration ownership sequence required by DB-002A. TKT-001 was separately confirmed `DONE` as requested but is not a direct DB-002A dependency.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; non-required document sections and unrelated task reports; SupportPilot implementation; commerce authentication/API/seed/order/payment services; shipping/refund/warranty/claim flows; and all later tasks.
+- Commands run and results: Static Ruff PASS; strict Mypy PASS (47 source files); DB-002A static tests PASS (7); final full backend tests PASS (61); Docker Engine 29.4.0 available after starting the installed Docker Desktop; isolated `supportpilot-db002a` PostgreSQL/bootstrap/migration build and startup PASS; final expanded migration downgrade/upgrade round trip PASS; exact physical/constraint/grant/transaction integration PASS; commerce Alembic `heads` and `current` both `0001_db002a_commerce`; `git diff --check` PASS; scope/import/security scans PASS; isolated containers/network/volume cleanup PASS.
+- Security checks: Migration and metadata contain no support reference, cross-schema FK, seed, real PII, PAN/CVV/provider secret or UC-02+ object; every fixture is deterministic synthetic `.test` data used only inside the disposable harness; `support_app` is denied commerce schema usage and `commerce_app` is denied support; owner credential remains migration-only; all SQL is static/parameterized; audit/idempotency runtime UPDATE/DELETE privileges are absent; Mock-Commerce source cannot import SupportPilot runtime modules.
+- Acceptance criteria evidence: Catalog assertions prove exactly seven domain tables, six enums and the documented physical types; all six FK constraints target `commerce` and report `ON DELETE RESTRICT`; unique order number, customer-scoped indexes, composite payment ownership and partial transaction-ref uniqueness are exercised; invalid currency/amount/version/synthetic/status/action/operation writes fail; order/payment expected-version updates return version 2 exactly once and stale expected version returns zero rows; injected idempotency conflict rolls back both state versions and audit insert; runtime grant probes independently enforce both schema isolation and append-only history.
+- Risks/limitations remaining: DB-002A intentionally provides persistence only. Synthetic seed profiles, internal authentication, order/payment HTTP APIs and production synchronization logic remain owned by their declared later tasks. Product normalization fixtures are structurally supported but the normalization algorithm belongs to seed/service work. The destructive downgrade/upgrade harness must continue to run only against its disposable Compose project.
+- Deviations from PLAN: None. Real PostgreSQL testing required explicitly qualifying extension-owned `public.citext` and `public.gin_trgm_ops` because the approved commerce migration search path remains locked to `commerce, pg_catalog`; isolation was preserved rather than widened.
+- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, DB-002A will satisfy its dependency edge for `SEED-001`, `MOCK-ORD-001` and `MOCK-PAY-001`; their remaining dependencies still apply. None was started.
 
 ### SEED-001 — Synthetic UC-01 seed profile
 

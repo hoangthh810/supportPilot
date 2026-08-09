@@ -31,3 +31,15 @@ def test_public_skeleton_router_does_not_import_fake_implementations() -> None:
     modules = imported_modules(router_path)
 
     assert "backend.apps.support_api.walking_skeleton.adapters" not in modules
+
+
+def test_mock_commerce_has_no_support_runtime_imports() -> None:
+    mock_commerce_root = Path("backend/apps/mock_commerce_api")
+    violations: list[str] = []
+
+    for path in mock_commerce_root.rglob("*.py"):
+        for module in imported_modules(path):
+            if module.startswith("backend.apps.support_api"):
+                violations.append(f"{path}: {module}")
+
+    assert violations == []

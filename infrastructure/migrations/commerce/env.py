@@ -8,12 +8,13 @@ from alembic import context
 from sqlalchemy import Connection, pool, text
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from backend.apps.mock_commerce_api.persistence.models import metadata
+
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Phase 1 deliberately has no application metadata or domain migrations.
-target_metadata = None
+target_metadata = metadata
 DATABASE_ENVIRONMENT = "COMMERCE_MIGRATION_DATABASE_URL"
 SCHEMA = "commerce"
 

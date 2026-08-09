@@ -1,0 +1,1 @@
+"""Commerce-owned persistence metadata."""
