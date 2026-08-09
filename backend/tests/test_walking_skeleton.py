@@ -6,17 +6,19 @@ from fastapi.testclient import TestClient
 from pwdlib import PasswordHash
 
 from backend.apps.support_api.app import create_app
-from backend.apps.support_api.auth.contracts import AuthenticatedActor as Actor
 from backend.apps.support_api.auth.contracts import AuthUser
 from backend.apps.support_api.auth.service import AuthService
 from backend.apps.support_api.core.config import Settings
+from backend.apps.support_api.tickets.contracts import NoopMessageResumePort
+from backend.apps.support_api.tickets.rate_limit import TicketWriteRateLimiter
+from backend.apps.support_api.tickets.service import TicketService
 from backend.apps.support_api.walking_skeleton.adapters import (
     FakeActionAdapter,
     FakeAgentAdapter,
     FakeApprovalAdapter,
 )
-from backend.apps.support_api.walking_skeleton.contracts import TicketRecord
 from backend.apps.support_api.walking_skeleton.service import SkeletonService
+from backend.tests.ticket_fakes import MemoryTicketRepository
 
 CUSTOMER_ID = UUID("00000000-0000-4000-8000-000000000101")
 AGENT_ID = UUID("00000000-0000-4000-8000-000000000102")
@@ -54,55 +56,6 @@ class MemoryAuthRepository:
         return any(user.id == user_id and user.status == "ACTIVE" for user in self.users.values())
 
 
-class MemoryTicketRepository:
-    def __init__(self) -> None:
-        self.tickets: dict[UUID, TicketRecord] = {}
-        self.replays: dict[tuple[UUID, str], TicketRecord] = {}
-
-    async def create_ticket(
-        self,
-        *,
-        actor_id: UUID,
-        subject: str,
-        body: str,
-        source: str,
-        idempotency_key: str,
-    ) -> TicketRecord:
-        del body, source
-        replay_key = (actor_id, idempotency_key)
-        if replay_key in self.replays:
-            return self.replays[replay_key]
-        ticket_id = uuid4()
-        ticket = TicketRecord(
-            id=ticket_id,
-            ticket_number=f"SP-{ticket_id.hex[:8].upper()}",
-            customer_user_id=actor_id,
-            subject=subject,
-            status="OPEN",
-        )
-        self.tickets[ticket.id] = ticket
-        self.replays[replay_key] = ticket
-        return ticket
-
-    async def get_ticket_for_actor(
-        self, *, ticket_id: UUID, actor: Actor
-    ) -> TicketRecord | None:
-        ticket = self.tickets.get(ticket_id)
-        if ticket is None or (actor.role == "customer" and ticket.customer_user_id != actor.id):
-            return None
-        return ticket
-
-    async def set_ticket_status(self, *, ticket_id: UUID, status: str) -> None:
-        ticket = self.tickets[ticket_id]
-        self.tickets[ticket_id] = TicketRecord(
-            id=ticket.id,
-            ticket_number=ticket.ticket_number,
-            customer_user_id=ticket.customer_user_id,
-            subject=ticket.subject,
-            status=status,
-        )
-
-
 def build_client(settings: Settings) -> tuple[TestClient, MemoryTicketRepository]:
     repository = MemoryTicketRepository()
     auth_service = AuthService(settings=settings, repository=MemoryAuthRepository())
@@ -112,7 +65,16 @@ def build_client(settings: Settings) -> tuple[TestClient, MemoryTicketRepository
         approval=FakeApprovalAdapter(),
         action=FakeActionAdapter(),
     )
-    return TestClient(create_app(settings, service, auth_service)), repository
+    ticket_service = TicketService(
+        repository=repository,
+        resume_port=NoopMessageResumePort(),
+        request_timeout_seconds=settings.workflow_request_timeout_seconds,
+        rate_limiter=TicketWriteRateLimiter(limit=1000),
+    )
+    return (
+        TestClient(create_app(settings, service, auth_service, ticket_service)),
+        repository,
+    )
 
 
 def login(client: TestClient, email: str) -> str:

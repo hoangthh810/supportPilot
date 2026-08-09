@@ -406,37 +406,49 @@ async def assert_repository(runtime_engine: AsyncEngine) -> None:
     assert user.password_hash.startswith("$argon2")
 
     key = f"db001a-repository-{uuid4()}"
-    ticket = await repository.create_ticket(
-        actor_id=DEMO_CUSTOMER_USER_ID,
+    actor = Actor(
+        id=DEMO_CUSTOMER_USER_ID,
+        role="customer",
+        status="active",
+        customer_id=user.customer_id,
+    )
+    created = await repository.create_ticket(
+        actor=actor,
         subject="Synthetic DB-001A repository check",
         body="Synthetic message for repository compatibility.",
         source="WEB",
         idempotency_key=key,
     )
     replay = await repository.create_ticket(
-        actor_id=DEMO_CUSTOMER_USER_ID,
+        actor=actor,
         subject="Synthetic DB-001A repository check",
         body="Synthetic message for repository compatibility.",
         source="WEB",
         idempotency_key=key,
     )
-    assert replay.id == ticket.id
+    ticket = created.ticket
+    assert replay.ticket.id == ticket.id
 
     scoped = await repository.get_ticket_for_actor(
         ticket_id=ticket.id,
-        actor=Actor(id=DEMO_CUSTOMER_USER_ID, role="customer", status="ACTIVE"),
+        actor=actor,
     )
     assert scoped == ticket
     denied = await repository.get_ticket_for_actor(
         ticket_id=ticket.id,
-        actor=Actor(id=DEMO_AGENT_USER_ID, role="customer", status="ACTIVE"),
+        actor=Actor(
+            id=DEMO_AGENT_USER_ID,
+            role="customer",
+            status="active",
+            customer_id=user.customer_id,
+        ),
     )
     assert denied is None
 
     await repository.set_ticket_status(ticket_id=ticket.id, status="ESCALATED")
     escalated = await repository.get_ticket_for_actor(
         ticket_id=ticket.id,
-        actor=Actor(id=DEMO_CUSTOMER_USER_ID, role="customer", status="ACTIVE"),
+        actor=actor,
     )
     assert escalated is not None and escalated.status == "ESCALATED"
 

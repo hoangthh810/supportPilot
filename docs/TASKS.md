@@ -465,7 +465,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### TKT-001 — Final Ticket and message APIs
 
-- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 3; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Replace skeleton Ticket repository/service with create/list/detail and dual message/resume contract.
 - **In scope:** Ownership, Ticket+first-message transaction, idempotency, list/detail projections, attachment pre-validation and message commit-before-resume orchestration port.
 - **Out of scope:** Agent node logic, attachment storage/fetch/upload or PDF upload.
@@ -483,6 +483,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Transaction/resume coupling, duplicate message, hidden create-run side effect.
 - **Review checklist:** [ ] explicit trigger [ ] dual response [ ] ownership [ ] replay [ ] failure persistence.
 - **Completion report:** Use §11 with `Task ID: TKT-001`.
+
+#### TKT-001 completion report
+
+- Task ID: `TKT-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Replaced the Walking Skeleton-owned Ticket create path with a dedicated final Ticket API/service/repository boundary providing transactional create, scoped paginated list, safe detail and the v0.1 dual message/resume contract, while retaining the explicit separate Agent Run trigger and introducing no hidden run creation.
+- Files/modules changed: New `backend/apps/support_api/tickets/{contracts,rate_limit,repository,router,service}.py`; backend application composition; Walking Skeleton contracts/router/service plus repository compatibility import; Ticket test fakes and contract tests; Walking Skeleton regression tests; DB-001A repository compatibility harness; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Implements final `POST/GET /api/v1/tickets`, `GET /api/v1/tickets/{id}` and `POST /api/v1/tickets/{id}/messages` behavior over the existing DB-001A tables. Omitted/empty attachment references follow the normal path; any non-empty list returns exact `422 ATTACHMENTS_NOT_SUPPORTED`, `retryable=false`, before persistence, limiter consumption or resume. Valid messages commit before the resume port; message-only returns `201`, same-run resume and missing-invariant paths return `200`, and timeout returns `504 WORKFLOW_REQUEST_TIMEOUT` while retaining the message and escalating the Ticket. No attachment, workflow, audit or idempotency table was added.
+- Migrations created (if authorized): None. TKT-001 uses only the reviewer-approved final-named `support.support_tickets` and `support.ticket_messages` DB-001A contract.
+- Tests added/updated: Added Ticket API/service contract coverage for create/replay/conflict/no-auto-run, pagination, staff/customer ownership, safe detail projection, omitted/empty/non-empty attachments, message replay/conflict, rate limiting, same-run resume, missing-resume invariant and timeout persistence; updated Walking Skeleton and DB-001A repository regressions for the final Ticket owner.
+- Required context loaded: This `TKT-001` task section; `docs/API_CONTRACT.md` §5, §7, §11, §12, §13 and §17; `docs/DATABASE_DESIGN.md` §6.3, §6.4, §7.11 and §14; `docs/AGENT_WORKFLOW.md` §9, §11.1, §11.2 and §12; `docs/SECURITY.md` §6, §14 and §20.
+- Additional context loaded and reasons: Direct dependency completion reports for `AUTH-001`, `DB-001A` and `SKEL-001`; only API_CONTRACT §1 and §6 for the public prefix, per-response correlation and exact page/page-size convention omitted from the required sections; completion template/command catalog; current Ticket/auth/application composition, final DB-001A migrations, affected tests and the direct dependent-ID rows needed for a scoped implementation and handoff.
+- Dependency completion reports reviewed: `AUTH-001`, `DB-001A` and `SKEL-001`; all are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and provide authenticated customer scope, final Ticket/message tables and the explicit Walking Skeleton run boundary.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; unrelated document sections and task reports; frontend implementation; Mock-Commerce; Gemini/RAG/LangGraph node implementation; production approval/action; attachment storage/upload; and every later task implementation area.
+- Commands run and results: Initial targeted Ruff/Mypy surfaced and then cleared import/typing issues; targeted Ticket/Walking Skeleton contract tests PASS (10); final Ruff PASS for backend and the affected infrastructure harness; strict Mypy PASS (43 source files); full backend tests PASS (53); `git diff --check` PASS; attachment/network, checkpoint/CoT and commerce-access scans PASS with zero matches. A Docker availability probe could not reach `DockerDesktopLinuxEngine`, so no optional Compose/real-PostgreSQL rerun was possible; `CMD-COMPOSE` is not a required TKT-001 command, while the required `CMD-BE-QUALITY` and local `CMD-CONTRACT` Ticket/message subset passed.
+- Security checks: Customer reads/writes are scoped by authenticated user plus customer ID and return indistinguishable `TICKET_NOT_FOUND` outside scope; staff receives only safe projections; write limiting is principal/operation scoped; in-memory replay keys are SHA-256 fingerprints and database idempotency keys are scoped SHA-256 values; repository SQL is static/parameterized and uses only `support`; attachment values are never stored, fetched or interpreted; public responses contain no checkpoint, chain-of-thought, token or secret.
+- Acceptance criteria evidence: Ticket and first message share one repository transaction and create never calls the resume/run boundary; scoped list/detail and idempotent replay/conflict tests pass; both valid attachment-empty forms persist normally; non-empty attachment tests prove exact rejection with unchanged messages and no resume; same key produces one message and one resume; missing checkpoint/invariant keeps the message, creates no run and escalates; timeout keeps the message, escalates and replays the same typed failure without a second resume.
+- Risks/limitations remaining: The real same-run workflow adapter, run `FAILED` transition and audit event are intentionally owned by later workflow/audit tasks; the default port therefore treats a waiting Ticket without that adapter as the documented invariant failure and never creates a run. Exact response replay is process-local until `DB-001B3` supplies approved durable response storage; DB-level resource replay still prevents duplicate Ticket/message persistence after restart. Per-request `correlation_id` is intentionally fresh on HTTP replay. Docker Desktop was unavailable, so the updated PostgreSQL compatibility harness was type/lint checked but not rerun against a live database in this task session.
+- Deviations from PLAN: None. Durable exact response persistence and workflow/audit state are staged behind their declared later database/workflow tasks rather than being implemented early by TKT-001.
+- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, TKT-001 will satisfy its dependency edge for `AG-001`, `AG-003`, `WEB-001`, `E2E-001C`, `E2E-001D` and `SEC-001`; their remaining dependencies still apply. None was started.
 
 ## 8. Phase 4 — Mock-Commerce and Order Resolution
 

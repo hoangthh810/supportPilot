@@ -5,15 +5,7 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from backend.apps.support_api.auth.contracts import AuthenticatedActor
-
-
-@dataclass(frozen=True, slots=True)
-class TicketRecord:
-    id: UUID
-    ticket_number: str
-    customer_user_id: UUID
-    subject: str
-    status: str
+from backend.apps.support_api.tickets.contracts import TicketRecord as TicketRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,16 +18,6 @@ class Proposal:
 
 
 class TicketRepository(Protocol):
-    async def create_ticket(
-        self,
-        *,
-        actor_id: UUID,
-        subject: str,
-        body: str,
-        source: str,
-        idempotency_key: str,
-    ) -> TicketRecord: ...
-
     async def get_ticket_for_actor(
         self, *, ticket_id: UUID, actor: AuthenticatedActor
     ) -> TicketRecord | None: ...

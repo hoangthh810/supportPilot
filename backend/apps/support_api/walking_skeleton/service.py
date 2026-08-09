@@ -60,24 +60,6 @@ class SkeletonService:
         self._run_replays: dict[tuple[UUID, UUID, str], RunState] = {}
         self._approvals: dict[UUID, RunState] = {}
 
-    async def create_ticket(
-        self,
-        *,
-        actor: Actor,
-        subject: str,
-        body: str,
-        source: str,
-        idempotency_key: str,
-    ) -> TicketRecord:
-        self._require_role(actor, {"customer"})
-        return await self._repository.create_ticket(
-            actor_id=actor.id,
-            subject=subject,
-            body=body,
-            source=source.upper(),
-            idempotency_key=idempotency_key,
-        )
-
     async def create_run(
         self,
         *,

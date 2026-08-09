@@ -14,19 +14,6 @@ from backend.apps.support_api.walking_skeleton.service import SkeletonService
 router = APIRouter(prefix="/api/v1")
 
 
-class TicketCreateRequest(BaseModel):
-    subject: str = Field(min_length=1, max_length=500)
-    body: str = Field(min_length=1, max_length=10_000)
-    source: Literal["web", "api"]
-
-
-class TicketCreateResponse(BaseModel):
-    ticket_id: UUID
-    ticket_number: str
-    ticket_status: Literal["OPEN"]
-    correlation_id: str
-
-
 class AgentRunRequest(BaseModel):
     pass
 
@@ -82,35 +69,6 @@ def get_skeleton_service(request: Request) -> SkeletonService:
     if not isinstance(service, SkeletonService):
         raise RuntimeError("Walking Skeleton service is unavailable")
     return service
-
-
-@router.post(
-    "/tickets",
-    response_model=TicketCreateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_ticket(
-    payload: TicketCreateRequest,
-    request: Request,
-    actor: Annotated[Actor, Depends(require_roles("customer"))],
-    service: Annotated[SkeletonService, Depends(get_skeleton_service)],
-    idempotency_key: Annotated[
-        str, Header(alias="Idempotency-Key", min_length=1, max_length=128)
-    ],
-) -> TicketCreateResponse:
-    ticket = await service.create_ticket(
-        actor=actor,
-        subject=payload.subject,
-        body=payload.body,
-        source=payload.source,
-        idempotency_key=idempotency_key,
-    )
-    return TicketCreateResponse(
-        ticket_id=ticket.id,
-        ticket_number=ticket.ticket_number,
-        ticket_status="OPEN",
-        correlation_id=get_correlation_id(request),
-    )
 
 
 @router.post(
