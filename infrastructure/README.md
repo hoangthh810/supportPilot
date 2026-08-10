@@ -11,8 +11,8 @@ workflow/approval persistence, queue or Redis service.
   the DB-000 role/schema bootstrap.
 - `migrate-support` receives only `SUPPORT_MIGRATION_DATABASE_URL` for `support_owner`.
 - `migrate-commerce` receives only `COMMERCE_MIGRATION_DATABASE_URL` for `commerce_owner`.
-- `backend` receives only the `support_app` runtime DSN.
-- `mock-commerce` receives only the `commerce_app` runtime DSN.
+- `backend` receives only the `support_app` runtime DSN and internal service token.
+- `mock-commerce` receives only the `commerce_app` runtime DSN and internal service token.
 - PostgreSQL and Mock-Commerce are not published to the host. Only the frontend and
   backend development ports are published.
 
@@ -56,6 +56,21 @@ docker compose --env-file .env.compose run --rm seed-profile python infrastructu
 
 The output contains only profile/checksum/count metadata. Database URLs, password hashes,
 internal service tokens and customer message content are never printed.
+
+## Internal Mock-Commerce authentication
+
+`MOCK-AUTH-001` runs Mock-Commerce as a private FastAPI service. Every
+`/internal/v1/*` request must provide exact `Authorization: Bearer
+<INTERNAL_SERVICE_TOKEN>` before routing, body parsing or ownership lookup. Missing or
+malformed credentials return `401 INTERNAL_UNAUTHENTICATED`; a wrong token or user JWT
+returns `403 INTERNAL_FORBIDDEN`. The SupportPilot HTTP boundary owns header injection,
+and the same internal token is explicitly rejected on public `/api/v1/*` routes.
+
+The container smoke harness verifies the matrix without printing the credential:
+
+```powershell
+docker compose --env-file .env.compose run --rm --no-deps -e MOCK_COMMERCE_SMOKE_BASE_URL=http://mock-commerce:8080 backend python infrastructure/tests/run_mock_auth_smoke.py
+```
 
 ## Walking Skeleton commands
 

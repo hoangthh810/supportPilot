@@ -43,3 +43,22 @@ def test_mock_commerce_has_no_support_runtime_imports() -> None:
                 violations.append(f"{path}: {module}")
 
     assert violations == []
+
+
+def test_support_commerce_boundary_contains_no_database_or_mock_runtime_imports() -> None:
+    boundary_root = Path("backend/apps/support_api/commerce")
+    forbidden_segments = (
+        "sqlalchemy",
+        "asyncpg",
+        "mock_commerce_api",
+        "persistence",
+        "repository",
+    )
+    violations: list[str] = []
+
+    for path in boundary_root.rglob("*.py"):
+        for module in imported_modules(path):
+            if any(segment in module for segment in forbidden_segments):
+                violations.append(f"{path}: {module}")
+
+    assert violations == []

@@ -12,6 +12,9 @@ from backend.apps.support_api.core.config import Settings, WorkflowProfile, load
 from backend.apps.support_api.core.correlation import CorrelationIdMiddleware
 from backend.apps.support_api.core.database import create_support_engine
 from backend.apps.support_api.core.errors import register_error_handlers
+from backend.apps.support_api.core.internal_token_isolation import (
+    RejectInternalServiceTokenMiddleware,
+)
 from backend.apps.support_api.core.logging import configure_logging
 from backend.apps.support_api.health import router as health_router
 from backend.apps.support_api.tickets.contracts import NoopMessageResumePort
@@ -92,6 +95,10 @@ def create_app(
     app.state.auth_service = auth_service
     app.state.ticket_service = ticket_service
     app.state.skeleton_service = skeleton_service
+    app.add_middleware(
+        RejectInternalServiceTokenMiddleware,
+        internal_service_token=runtime_settings.internal_service_token,
+    )
     app.add_middleware(
         CorrelationIdMiddleware,
         header_name=runtime_settings.correlation_header,

@@ -90,7 +90,7 @@ services:
     environment:
       COMMERCE_DATABASE_URL: postgresql+asyncpg://commerce_app:${COMMERCE_APP_PASSWORD:?COMMERCE_APP_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-supportpilot}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
-    command: ["python", "infrastructure/containers/mock_commerce_health.py"]
+    command: ["uvicorn", "backend.apps.mock_commerce_api.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=2)"]
       interval: 3s
@@ -157,6 +157,7 @@ services:
       LOG_FORMAT: json
       REQUEST_RATE_LIMIT_PER_MINUTE: 60
       EMAIL_BACKEND: draft_only
+    command: ["uvicorn", "backend.apps.support_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"]
       interval: 3s

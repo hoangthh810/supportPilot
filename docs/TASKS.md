@@ -550,7 +550,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### SEED-001 — Synthetic UC-01 seed profile
 
-- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Create repeatable `payment-mismatch-v01` support/commerce/policy/evaluation fixtures.
 - **In scope:** Fixed IDs/checksums, roles/customer/orders/payments/policies/ambiguity/isolation/failure fixtures and idempotent seed.
 - **Out of scope:** Real data or UC-02+ fixtures for implementation.
@@ -566,15 +566,15 @@ Nếu phát hiện mâu thuẫn:
 - **Required tests/commands:** Seed twice under `CMD-COMPOSE`; checksum and duplicate smoke tests.
 - **Security:** No real PII/payment secret; cross-customer isolation fixture intentional and masked.
 - **Risks:** Insufficient edge cases, non-idempotent seed, accidental sensitive sample data.
-- **Review checklist:** [ ] synthetic only [ ] fixed IDs/checksums [ ] repeatability [ ] required cases [ ] no extra UC.
+- **Review checklist:** [x] synthetic only [x] fixed IDs/checksums [x] repeatability [x] required cases [x] no extra UC.
 - **Completion report:** Use §11 with `Task ID: SEED-001`.
 
 #### SEED-001 completion report
 
 - Task ID: `SEED-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Created the deterministic synthetic `payment-mismatch-v01` profile with fixed identities and commerce IDs, idempotent support/commerce runtime-role upserts, active/expired/conflicting Markdown policy fixtures, all required conservative-path scenario fixtures, and an exactly 25-case versioned golden dataset split into 15 calibration and 10 locked holdout cases.
+- Goal achieved: Created the deterministic synthetic `payment-mismatch-v01` profile with fixed identities and commerce IDs, idempotent support/commerce runtime-role upserts, active/expired/conflicting Markdown policy fixtures, all required conservative-path scenario fixtures, and an exactly 25-case versioned golden dataset split into 15 calibration and 10 locked holdout cases. The reviewer approved the implementation and all acceptance criteria.
 - Files/modules changed: New `backend/seeds/payment_mismatch_v01` seed package and versioned fixtures; `backend/tests/test_seed_profile.py`; `infrastructure/tests/run_seed001_integration.py`; the Compose `seed-profile` job; seed usage in `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: No table, enum, constraint, index or migration was created or changed. The seed uses separate `support_app` and `commerce_app` connections with no cross-schema query. It upserts three fixed support users, one verified support customer, two synthetic commerce customers, one synthetic product, three scoped orders/items and one succeeded payment; policy/scenario/evaluation fixtures remain versioned files for their owning later tasks. No Ticket, idempotency record or audit record is seeded.
 - Migrations created (if authorized): None; SEED-001 runs only after the existing DB-001A and DB-002A heads.
@@ -588,11 +588,11 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: The locked manifest and SHA-256 test prove stable profile version/checksum and fixed IDs; catalog-constrained PostgreSQL writes prove all database rows remain synthetic; policy fixtures cover active, expired and conflict states with required metadata; scenarios cover success, ambiguity, isolation, timeout, stale order, duplicate retry, approval expiry, material edit and possible-write `UNKNOWN`; golden tests prove exactly 15 calibration plus 10 locked holdout cases with retrieval ground truth; identical second-run summary and database snapshot prove idempotency and no duplicate rows.
 - Risks/limitations remaining: The fixed reference timestamp is intentional deterministic fixture data, so later time-window resolution tests must use the profile reference clock. Policy files are not ingested until `KB-001`; scenario and golden fixtures are not execution/evaluation evidence until their owning workflow/RAG/evaluation tasks consume them. Seed upserts restore profile-owned mutable fields to their fixed baseline and therefore should remain a local synthetic/demo command only.
 - Deviations from PLAN: None.
-- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, SEED-001 will satisfy its dependency edge for `MOCK-ORD-001`, `MOCK-PAY-001`, `KB-001` and `EVAL-001`; each task's remaining dependencies still apply. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and SEED-001 is now `DONE`; its dependency edge is satisfied for `MOCK-ORD-001`, `MOCK-PAY-001`, `KB-001` and `EVAL-001`, whose remaining dependencies still apply. None was started.
 
 ### MOCK-AUTH-001 — Internal Bearer authentication boundary
 
-- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Enforce the exact authentication and token-isolation contract for `/internal/v1/*`.
 - **In scope:** Exact `Authorization: Bearer <INTERNAL_SERVICE_TOKEN>` middleware, SupportPilot adapter contract, validation order, public/internal isolation and redaction.
 - **Out of scope:** Token rotation, mTLS, multiple service identities or user authentication changes.
@@ -609,6 +609,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Credential crossover, token leakage, auth after ownership validation.
 - **Review checklist:** [ ] exact header [ ] 401/403 matrix [ ] validation order [ ] public isolation [ ] redaction.
 - **Completion report:** Use §11 with `Task ID: MOCK-AUTH-001`.
+
+#### MOCK-AUTH-001 completion report
+
+- Task ID: `MOCK-AUTH-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Replaced the temporary Mock-Commerce health process with a private FastAPI shell and exact internal Bearer authentication middleware; added constant-time credential comparison, authentication-before-routing/body behavior, typed 401/403 envelopes, SupportPilot-owned header injection, public/internal credential isolation and runtime log hardening without implementing a commerce business endpoint.
+- Files/modules changed: New Mock-Commerce `app.py`, `main.py`, `auth` and `core` packages; new SupportPilot `commerce` HTTP-auth boundary and public internal-token isolation middleware; Support API composition; Mock-Commerce/security/import-boundary tests; container smoke harness; Compose runtime commands; `infrastructure/README.md`; removal of the superseded `infrastructure/containers/mock_commerce_health.py`; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Enforces exact `Authorization: Bearer <INTERNAL_SERVICE_TOKEN>` on `/internal/v1` and `/internal/v1/*`; missing/malformed credentials return `401 INTERNAL_UNAUTHENTICATED`, wrong token/user JWT returns `403 INTERNAL_FORBIDDEN`, and valid credentials set an internal authenticated service context before routing. Public `/api/v1` rejects the exact internal token as `401 UNAUTHENTICATED`. No public or internal business endpoint, database object, ownership rule, idempotency behavior or response payload contract was added.
+- Migrations created (if authorized): None.
+- Tests added/updated: Added 17 focused internal-auth/config/redaction/adapter/public-isolation/frontend-runtime tests and one reverse boundary test, producing a 21-test contract/security subset with existing boundary tests; added a container smoke harness for health, missing, malformed, wrong, user-JWT and valid-token routing behavior.
+- Required context loaded: This `MOCK-AUTH-001` task section; `docs/API_CONTRACT.md` §1, §2, §3, §8 and §17; `docs/ARCHITECTURE.md` §10, §12 and §18; `docs/SECURITY.md` §8, §17, §18, §22 and §26.
+- Additional context loaded and reasons: Direct completion reports for `FND-001` and `INF-001`; current Support settings/error/correlation/logging/application/auth composition, Mock-Commerce health shell, Compose topology and existing import/logging/application tests needed to preserve approved conventions and replace only the temporary private service process; direct dependent-ID rows only for completion handoff.
+- Dependency completion reports reviewed: `FND-001` and `INF-001`; both are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and provide the error/correlation/config shell plus private runtime/token topology required by MOCK-AUTH-001. SEED-001 was separately confirmed `DONE` as requested but is not a direct dependency.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; non-required document sections and unrelated completion reports; commerce repositories/order/payment services; seed internals; RAG, LangGraph, approval/action, frontend feature implementation and later tasks.
+- Commands run and results: Targeted Ruff PASS; final full Ruff PASS; focused contract/security tests PASS (21); final full backend tests PASS (85); targeted Mypy PASS (17 files) and final Mypy PASS (64 source files including the smoke harness); Compose config PASS; frontend typecheck/build PASS (46 modules); frontend bundle-secret scan PASS; isolated `supportpilot-mockauth001` Compose build/migrations/health PASS; container smoke returned health 200, missing/malformed 401, wrong/user-JWT 403 and valid credential reaching the router; final raw-token/Authorization/access-log scan PASS; static secret scan PASS; `git diff --check` PASS; isolated containers/network/volume cleanup PASS.
+- Security checks: Internal auth executes in pure ASGI middleware before FastAPI routing or body consumption; exact-token comparison uses `hmac.compare_digest`; duplicate/caller-controlled Authorization is not accepted by the SupportPilot header provider; query/body credentials receive no fallback; token storage uses `SecretStr` and adapter repr is safe; rejection bodies contain no credential; Mock-Commerce and SupportPilot remain free of reverse runtime/database imports; internal token is absent from frontend runtime/config and built bundle; Uvicorn access logs are disabled on both token-bearing runtimes and final container logs contain no raw token/header.
+- Acceptance criteria evidence: Unit and container matrices prove missing/malformed → exact non-retryable 401, wrong token/user JWT → exact non-retryable 403, and valid token reaches the protected router; an invalid body with missing/wrong auth returns 401/403 before validation and ownership callback count remains zero; public login with the internal token returns 401 before credential handling; adapter tests prove environment-derived exact header injection and override rejection; formatter, bundle, source and live-container log scans prove token isolation/redaction.
+- Risks/limitations remaining: V0.1 intentionally uses one environment token without rotation, mTLS or multiple service identities. Business-route customer ownership, approval references, idempotency and real HTTP request/response adapters remain owned by `MOCK-ORD-001`, `MOCK-PAY-001` and `TOOL-001`; the current header provider defines their safe auth boundary but performs no commerce call. Disabling raw Uvicorn access logs favors token safety; bounded structured request telemetry belongs to its declared observability task.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, MOCK-AUTH-001 will satisfy its dependency edge for `MOCK-ORD-001`, `MOCK-PAY-001`, `TOOL-001` and `SEC-001`; each task's remaining dependencies still apply. None was started.
 
 ### MOCK-ORD-001 — Mock Order HTTP API
 
