@@ -1,0 +1,30 @@
+{
+  "profile_id": "payment-mismatch-v01",
+  "version": "1.0.0",
+  "synthetic_only": true,
+  "reference_time": "2026-08-01T09:00:00Z",
+  "default_currency": "VND",
+  "support": {
+    "verified_customer_user_id": "00000000-0000-4000-8000-000000000101",
+    "support_agent_user_id": "00000000-0000-4000-8000-000000000102",
+    "support_manager_user_id": "00000000-0000-4000-8000-000000000103",
+    "customer_id": "00000000-0000-4000-8000-000000000201",
+    "commerce_customer_ref": "commerce-demo-customer-001"
+  },
+  "commerce": {
+    "customer_id": "10000000-0000-4000-8000-000000000001",
+    "isolation_customer_id": "10000000-0000-4000-8000-000000000002",
+    "chair_product_id": "20000000-0000-4000-8000-000000000001",
+    "primary_order_id": "30000000-0000-4000-8000-000000000001",
+    "ambiguity_order_id": "30000000-0000-4000-8000-000000000002",
+    "isolation_order_id": "30000000-0000-4000-8000-000000000003",
+    "succeeded_payment_id": "40000000-0000-4000-8000-000000000001"
+  },
+  "policies": [
+    "policies/payment-sync-v1-active.md",
+    "policies/payment-sync-v0-expired.md",
+    "policies/payment-sync-v1-conflict.md"
+  ],
+  "evaluation_dataset": "golden_cases.json",
+  "scenario_fixture": "scenarios.json"
+}

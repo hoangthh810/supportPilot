@@ -36,6 +36,27 @@ constraints, optimistic versions and transaction rollback. Run it only against t
 disposable Compose test database because it intentionally downgrades the commerce branch
 to `base` during verification.
 
+## Synthetic UC-01 seed profile
+
+`SEED-001` provides the versioned `payment-mismatch-v01` profile. The Compose
+`seed-profile` job connects as `support_app` and `commerce_app` through separate runtime
+connections, never performs a cross-schema query, and creates no table. It upserts fixed
+synthetic identities and commerce rows, while policy, conservative-path scenarios and the
+locked 15-calibration/10-holdout golden dataset remain versioned fixtures for their owning
+later tasks.
+
+Run the seed twice to verify normal idempotent operation, then run the checksum and
+duplicate smoke harness:
+
+```powershell
+docker compose --env-file .env.compose run --rm seed-profile
+docker compose --env-file .env.compose run --rm seed-profile
+docker compose --env-file .env.compose run --rm seed-profile python infrastructure/tests/run_seed001_integration.py
+```
+
+The output contains only profile/checksum/count metadata. Database URLs, password hashes,
+internal service tokens and customer message content are never printed.
+
 ## Walking Skeleton commands
 
 Copy `.env.compose.example` to the ignored `.env.compose`, replace every placeholder,

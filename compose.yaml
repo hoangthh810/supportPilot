@@ -64,6 +64,22 @@ services:
     networks: [supportpilot-private]
     restart: "no"
 
+  seed-profile:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    depends_on:
+      migrate-support:
+        condition: service_completed_successfully
+      migrate-commerce:
+        condition: service_completed_successfully
+    environment:
+      SUPPORT_DATABASE_URL: postgresql+asyncpg://support_app:${SUPPORT_APP_PASSWORD:?SUPPORT_APP_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-supportpilot}
+      COMMERCE_DATABASE_URL: postgresql+asyncpg://commerce_app:${COMMERCE_APP_PASSWORD:?COMMERCE_APP_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-supportpilot}
+    command: ["python", "-m", "backend.seeds.payment_mismatch_v01.seed", "--json"]
+    networks: [supportpilot-private]
+    restart: "no"
+
   mock-commerce:
     build:
       context: .

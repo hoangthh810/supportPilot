@@ -509,7 +509,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### DB-002A — UC-01 commerce schema
 
-- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Add the exact physical seven-table commerce persistence contract required by UC-01.
 - **In scope:** `customers/products/orders/order_items/payments/idempotency_records/audit_logs`, named enums, UUID/TIMESTAMPTZ/NUMERIC(18,2)/uppercase CHAR(3), customer-scoped indexes, partial transaction uniqueness, RESTRICT FKs, expected versions and append-only grants.
 - **Out of scope:** Shipping, refund, warranty, support imports or cross-schema FK.
@@ -524,15 +524,15 @@ Nếu phát hiện mâu thuẫn:
 - **Required tests/commands:** `CMD-COMMERCE-MIGRATE`, constraint/grant tests.
 - **Security:** No card data; `commerce_app` only; no support schema privilege.
 - **Risks:** FK/index order, cross-schema leak, status/version mismatch.
-- **Review checklist:** [ ] exact physical schema [ ] no extra UC tables [ ] constraints/indexes/FK behavior [ ] grants/immutability [ ] transaction tests.
+- **Review checklist:** [x] exact physical schema [x] no extra UC tables [x] constraints/indexes/FK behavior [x] grants/immutability [x] transaction tests.
 - **Completion report:** Use §11 with `Task ID: DB-002A`.
 
 #### DB-002A completion report
 
 - Task ID: `DB-002A`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Added the first commerce-domain revision and exact seven-table UC-01 persistence contract, with commerce-owned SQLAlchemy metadata, named enums, constrained money/currency/synthetic fields, customer-scoped indexes, same-schema `RESTRICT` foreign keys, optimistic versions, partial transaction-reference uniqueness, append-only idempotency/audit grants and isolated PostgreSQL verification.
+- Goal achieved: Added the first commerce-domain revision and exact seven-table UC-01 persistence contract, with commerce-owned SQLAlchemy metadata, named enums, constrained money/currency/synthetic fields, customer-scoped indexes, same-schema `RESTRICT` foreign keys, optimistic versions, partial transaction-reference uniqueness, append-only idempotency/audit grants and isolated PostgreSQL verification. The reviewer approved the implementation and all acceptance criteria.
 - Files/modules changed: New `backend/apps/mock_commerce_api/persistence/models.py` and package markers; commerce Alembic metadata wiring and `infrastructure/migrations/commerce/versions/0001_db002a_commerce.py`; static migration/model tests; real PostgreSQL integration harness; reverse import-boundary test; `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: Creates only `commerce.customers`, `products`, `orders`, `order_items`, `payments`, `idempotency_records` and `audit_logs`; six named commerce enums; documented UUID/TIMESTAMPTZ/NUMERIC(18,2)/uppercase CHAR(3) columns; exact unique/check/index/FK behavior; and no cross-schema relation. `orders` and `payments` alone carry optimistic `version`; non-null payment transaction references are uniquely indexed; idempotency and audit rows are runtime append-only. No seed, support object, endpoint or UC-02+ table was added.
 - Migrations created (if authorized): `0001_db002a_commerce`, the authorized first commerce-domain revision with `down_revision=None`. It runs only as `commerce_owner`, upgrades/downgrades transactionally, leaves the final head at `0001_db002a_commerce`, and fully removes its seven tables and six enums on downgrade.
@@ -546,11 +546,11 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: Catalog assertions prove exactly seven domain tables, six enums and the documented physical types; all six FK constraints target `commerce` and report `ON DELETE RESTRICT`; unique order number, customer-scoped indexes, composite payment ownership and partial transaction-ref uniqueness are exercised; invalid currency/amount/version/synthetic/status/action/operation writes fail; order/payment expected-version updates return version 2 exactly once and stale expected version returns zero rows; injected idempotency conflict rolls back both state versions and audit insert; runtime grant probes independently enforce both schema isolation and append-only history.
 - Risks/limitations remaining: DB-002A intentionally provides persistence only. Synthetic seed profiles, internal authentication, order/payment HTTP APIs and production synchronization logic remain owned by their declared later tasks. Product normalization fixtures are structurally supported but the normalization algorithm belongs to seed/service work. The destructive downgrade/upgrade harness must continue to run only against its disposable Compose project.
 - Deviations from PLAN: None. Real PostgreSQL testing required explicitly qualifying extension-owned `public.citext` and `public.gin_trgm_ops` because the approved commerce migration search path remains locked to `commerce, pg_catalog`; isolation was preserved rather than widened.
-- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, DB-002A will satisfy its dependency edge for `SEED-001`, `MOCK-ORD-001` and `MOCK-PAY-001`; their remaining dependencies still apply. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and DB-002A is now `DONE`; its dependency edge is satisfied for `SEED-001`, `MOCK-ORD-001` and `MOCK-PAY-001`, whose remaining dependencies still apply. None was started.
 
 ### SEED-001 — Synthetic UC-01 seed profile
 
-- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Create repeatable `payment-mismatch-v01` support/commerce/policy/evaluation fixtures.
 - **In scope:** Fixed IDs/checksums, roles/customer/orders/payments/policies/ambiguity/isolation/failure fixtures and idempotent seed.
 - **Out of scope:** Real data or UC-02+ fixtures for implementation.
@@ -568,6 +568,27 @@ Nếu phát hiện mâu thuẫn:
 - **Risks:** Insufficient edge cases, non-idempotent seed, accidental sensitive sample data.
 - **Review checklist:** [ ] synthetic only [ ] fixed IDs/checksums [ ] repeatability [ ] required cases [ ] no extra UC.
 - **Completion report:** Use §11 with `Task ID: SEED-001`.
+
+#### SEED-001 completion report
+
+- Task ID: `SEED-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Created the deterministic synthetic `payment-mismatch-v01` profile with fixed identities and commerce IDs, idempotent support/commerce runtime-role upserts, active/expired/conflicting Markdown policy fixtures, all required conservative-path scenario fixtures, and an exactly 25-case versioned golden dataset split into 15 calibration and 10 locked holdout cases.
+- Files/modules changed: New `backend/seeds/payment_mismatch_v01` seed package and versioned fixtures; `backend/tests/test_seed_profile.py`; `infrastructure/tests/run_seed001_integration.py`; the Compose `seed-profile` job; seed usage in `infrastructure/README.md`; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: No table, enum, constraint, index or migration was created or changed. The seed uses separate `support_app` and `commerce_app` connections with no cross-schema query. It upserts three fixed support users, one verified support customer, two synthetic commerce customers, one synthetic product, three scoped orders/items and one succeeded payment; policy/scenario/evaluation fixtures remain versioned files for their owning later tasks. No Ticket, idempotency record or audit record is seeded.
+- Migrations created (if authorized): None; SEED-001 runs only after the existing DB-001A and DB-002A heads.
+- Tests added/updated: Added six static profile tests for locked identity/version/checksum, fixed unique IDs, policy metadata, exact golden split/strata, conservative scenario coverage, connection isolation and sensitive-data exclusions; added a real PostgreSQL harness that seeds twice and compares profile/database snapshots for stable checksums and zero duplicates.
+- Required context loaded: This `SEED-001` task section; `docs/PROJECT_SPEC.md` §13.1, §13.2, §14 and §16; `docs/DATABASE_DESIGN.md` §6, §9 and §19; `docs/RAG_DESIGN.md` §6, §23 and §28; `docs/SECURITY.md` §16.
+- Additional context loaded and reasons: `docs/PLAN.md` §23 only because the acceptance criteria directly require every fixture listed there; existing support/commerce migrations and commerce metadata to target exact final columns without schema changes; current Compose/Dockerfile/bootstrap grants and infrastructure README to add an isolated runtime-role seed command without replacing valid infrastructure; auth repository/service only to preserve the established demo-login identity and Argon2 contract.
+- Dependency completion reports reviewed: `DB-001A` and `DB-002A`; both are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and expose the final support identity/Ticket and seven-table commerce contracts required by the profile.
+- Context intentionally not loaded: The rest of `docs/PLAN.md`; unrelated documentation sections and task reports; frontend implementation; internal Mock-Commerce HTTP implementation; knowledge database/indexing implementation; LangGraph, production approval/action and UC-02–UC-07 implementation.
+- Commands run and results: Targeted Ruff PASS; final full Ruff PASS; targeted seed tests PASS (6); final full backend tests PASS (67); targeted Mypy PASS (5 files) and full backend Mypy PASS (51 source files); Compose config PASS; isolated `supportpilot-seed001` PostgreSQL bootstrap and both migration heads PASS; final Compose seed pass 1 and pass 2 emitted identical profile version/counts/checksum `sha256:461c806e4d4ecbcbcde3423ca31ad70b68d90fcbb8b696db6d20b13a978daf61`; PostgreSQL checksum/duplicate harness PASS with `repeatable=true`, `duplicate_free=true` and snapshot checksum `5dd4a9fce7a110fc18fbdb5ff1a959d7b02b05e29201df0e13fe91783d0003e2`; scope/security scans PASS; `git diff --check` PASS. Both disposable Compose test projects and their volumes/networks were removed.
+- Security checks: All identities use `.test` addresses and fixed synthetic markers; the known local demo password is stored only as an Argon2 hash; no real PII, PAN, CVV, card/provider token, bearer token value or raw payment secret is present; seed output contains only profile/checksum/count metadata; support and commerce SQL are isolated by separate runtime connections; the intentional other-customer order is referenced only by a masked fixed identifier for denial testing.
+- Acceptance criteria evidence: The locked manifest and SHA-256 test prove stable profile version/checksum and fixed IDs; catalog-constrained PostgreSQL writes prove all database rows remain synthetic; policy fixtures cover active, expired and conflict states with required metadata; scenarios cover success, ambiguity, isolation, timeout, stale order, duplicate retry, approval expiry, material edit and possible-write `UNKNOWN`; golden tests prove exactly 15 calibration plus 10 locked holdout cases with retrieval ground truth; identical second-run summary and database snapshot prove idempotency and no duplicate rows.
+- Risks/limitations remaining: The fixed reference timestamp is intentional deterministic fixture data, so later time-window resolution tests must use the profile reference clock. Policy files are not ingested until `KB-001`; scenario and golden fixtures are not execution/evaluation evidence until their owning workflow/RAG/evaluation tasks consume them. Seed upserts restore profile-owned mutable fields to their fixed baseline and therefore should remain a local synthetic/demo command only.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, SEED-001 will satisfy its dependency edge for `MOCK-ORD-001`, `MOCK-PAY-001`, `KB-001` and `EVAL-001`; each task's remaining dependencies still apply. None was started.
 
 ### MOCK-AUTH-001 — Internal Bearer authentication boundary
 

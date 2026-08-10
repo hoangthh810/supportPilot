@@ -1,0 +1,74 @@
+{
+  "fixture_version": "payment-mismatch-scenarios-v1",
+  "synthetic_only": true,
+  "scenarios": [
+    {
+      "id": "success-payment-mismatch",
+      "order_id": "30000000-0000-4000-8000-000000000001",
+      "payment_id": "40000000-0000-4000-8000-000000000001",
+      "expected_outcome": "WAITING_APPROVAL"
+    },
+    {
+      "id": "ambiguous-chair-order",
+      "candidate_order_ids": [
+        "30000000-0000-4000-8000-000000000001",
+        "30000000-0000-4000-8000-000000000002"
+      ],
+      "expected_outcome": "WAITING_CUSTOMER"
+    },
+    {
+      "id": "cross-customer-isolation",
+      "authenticated_customer_id": "10000000-0000-4000-8000-000000000001",
+      "forbidden_order_id": "30000000-0000-4000-8000-000000000003",
+      "expected_error": "ORDER_NOT_FOUND"
+    },
+    {
+      "id": "workflow-timeout",
+      "elapsed_seconds": 60,
+      "expected_run_status": "FAILED",
+      "expected_ticket_status": "ESCALATED"
+    },
+    {
+      "id": "stale-order-version",
+      "order_id": "30000000-0000-4000-8000-000000000001",
+      "expected_version": 0,
+      "current_version": 1,
+      "expected_error": "STALE_ORDER"
+    },
+    {
+      "id": "duplicate-retry",
+      "idempotency_key": "seed-duplicate-sync-001",
+      "request_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected_outcome": "EXACT_REPLAY"
+    },
+    {
+      "id": "approval-expired",
+      "created_at": "2026-08-01T09:00:00Z",
+      "expires_at": "2026-08-02T09:00:00Z",
+      "decision_at": "2026-08-02T09:00:01Z",
+      "expected_status": "EXPIRED"
+    },
+    {
+      "id": "material-edit-reapproval",
+      "original": {
+        "action_type": "sync_payment_status",
+        "target_order_id": "30000000-0000-4000-8000-000000000001",
+        "amount": "2490000.00",
+        "currency": "VND"
+      },
+      "edited": {
+        "action_type": "sync_payment_status",
+        "target_order_id": "30000000-0000-4000-8000-000000000002",
+        "amount": "2490000.00",
+        "currency": "VND"
+      },
+      "expected_outcome": "REAPPROVAL_REQUIRED"
+    },
+    {
+      "id": "possible-write-unknown",
+      "failure_point": "after_commerce_commit_before_http_response",
+      "expected_action_status": "UNKNOWN",
+      "blind_retry_allowed": false
+    }
+  ]
+}
