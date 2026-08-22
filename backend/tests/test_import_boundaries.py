@@ -62,3 +62,21 @@ def test_support_commerce_boundary_contains_no_database_or_mock_runtime_imports(
                 violations.append(f"{path}: {module}")
 
     assert violations == []
+
+
+def test_shared_commerce_contracts_are_http_types_only() -> None:
+    contract_root = Path("backend/packages/commerce_contracts")
+    forbidden_segments = (
+        "sqlalchemy",
+        "asyncpg",
+        "backend.apps.support_api",
+        "backend.apps.mock_commerce_api",
+    )
+    violations: list[str] = []
+
+    for path in contract_root.rglob("*.py"):
+        for module in imported_modules(path):
+            if any(segment in module for segment in forbidden_segments):
+                violations.append(f"{path}: {module}")
+
+    assert violations == []

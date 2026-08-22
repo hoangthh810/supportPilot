@@ -592,7 +592,7 @@ Nếu phát hiện mâu thuẫn:
 
 ### MOCK-AUTH-001 — Internal Bearer authentication boundary
 
-- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `S`; milestone `v0.1-foundation`; status `DONE`; Owner: Unassigned.
 - **Goal:** Enforce the exact authentication and token-isolation contract for `/internal/v1/*`.
 - **In scope:** Exact `Authorization: Bearer <INTERNAL_SERVICE_TOKEN>` middleware, SupportPilot adapter contract, validation order, public/internal isolation and redaction.
 - **Out of scope:** Token rotation, mTLS, multiple service identities or user authentication changes.
@@ -607,15 +607,15 @@ Nếu phát hiện mâu thuẫn:
 - **Required tests/commands:** `CMD-CONTRACT`, `CMD-SECURITY`, auth-order and redaction tests.
 - **Security:** Environment injection only; constant-time comparison where applicable; never persist raw token.
 - **Risks:** Credential crossover, token leakage, auth after ownership validation.
-- **Review checklist:** [ ] exact header [ ] 401/403 matrix [ ] validation order [ ] public isolation [ ] redaction.
+- **Review checklist:** [x] exact header [x] 401/403 matrix [x] validation order [x] public isolation [x] redaction.
 - **Completion report:** Use §11 with `Task ID: MOCK-AUTH-001`.
 
 #### MOCK-AUTH-001 completion report
 
 - Task ID: `MOCK-AUTH-001`
-- Final status: `IN_REVIEW`
+- Final status: `DONE`
 - Owner: Unassigned
-- Goal achieved: Replaced the temporary Mock-Commerce health process with a private FastAPI shell and exact internal Bearer authentication middleware; added constant-time credential comparison, authentication-before-routing/body behavior, typed 401/403 envelopes, SupportPilot-owned header injection, public/internal credential isolation and runtime log hardening without implementing a commerce business endpoint.
+- Goal achieved: Replaced the temporary Mock-Commerce health process with a private FastAPI shell and exact internal Bearer authentication middleware; added constant-time credential comparison, authentication-before-routing/body behavior, typed 401/403 envelopes, SupportPilot-owned header injection, public/internal credential isolation and runtime log hardening without implementing a commerce business endpoint. The reviewer approved the implementation and all acceptance criteria.
 - Files/modules changed: New Mock-Commerce `app.py`, `main.py`, `auth` and `core` packages; new SupportPilot `commerce` HTTP-auth boundary and public internal-token isolation middleware; Support API composition; Mock-Commerce/security/import-boundary tests; container smoke harness; Compose runtime commands; `infrastructure/README.md`; removal of the superseded `infrastructure/containers/mock_commerce_health.py`; and this task status/report in `docs/TASKS.md`.
 - Contract/schema impact: Enforces exact `Authorization: Bearer <INTERNAL_SERVICE_TOKEN>` on `/internal/v1` and `/internal/v1/*`; missing/malformed credentials return `401 INTERNAL_UNAUTHENTICATED`, wrong token/user JWT returns `403 INTERNAL_FORBIDDEN`, and valid credentials set an internal authenticated service context before routing. Public `/api/v1` rejects the exact internal token as `401 UNAUTHENTICATED`. No public or internal business endpoint, database object, ownership rule, idempotency behavior or response payload contract was added.
 - Migrations created (if authorized): None.
@@ -629,11 +629,11 @@ Nếu phát hiện mâu thuẫn:
 - Acceptance criteria evidence: Unit and container matrices prove missing/malformed → exact non-retryable 401, wrong token/user JWT → exact non-retryable 403, and valid token reaches the protected router; an invalid body with missing/wrong auth returns 401/403 before validation and ownership callback count remains zero; public login with the internal token returns 401 before credential handling; adapter tests prove environment-derived exact header injection and override rejection; formatter, bundle, source and live-container log scans prove token isolation/redaction.
 - Risks/limitations remaining: V0.1 intentionally uses one environment token without rotation, mTLS or multiple service identities. Business-route customer ownership, approval references, idempotency and real HTTP request/response adapters remain owned by `MOCK-ORD-001`, `MOCK-PAY-001` and `TOOL-001`; the current header provider defines their safe auth boundary but performs no commerce call. Disabling raw Uvicorn access logs favors token safety; bounded structured request telemetry belongs to its declared observability task.
 - Deviations from PLAN: None.
-- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, MOCK-AUTH-001 will satisfy its dependency edge for `MOCK-ORD-001`, `MOCK-PAY-001`, `TOOL-001` and `SEC-001`; each task's remaining dependencies still apply. None was started.
+- Follow-up tasks unblocked: Reviewer approval is recorded and MOCK-AUTH-001 is now `DONE`; its dependency edge is satisfied for `MOCK-ORD-001`, `MOCK-PAY-001`, `TOOL-001` and `SEC-001`, whose remaining dependencies still apply. Only the separately requested next task, MOCK-ORD-001, is started after this transition.
 
 ### MOCK-ORD-001 — Mock Order HTTP API
 
-- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `TODO`; Owner: Unassigned.
+- **Metadata:** Phase 4; size `M`; milestone `v0.1-foundation`; status `IN_REVIEW`; Owner: Unassigned.
 - **Goal:** Expose customer-scoped order search/detail/items and sync-payment contract without support imports.
 - **In scope:** `/internal/v1` order endpoints, service auth, ownership, expected version, idempotent sync stub/behavior.
 - **Out of scope:** Shipping/refund/warranty or direct SupportPilot coupling.
@@ -649,8 +649,29 @@ Nếu phát hiện mâu thuẫn:
 - **Required tests/commands:** `CMD-CONTRACT`, Mock-Commerce integration/failure tests.
 - **Security:** Service token, customer scope, approval ref, no support DB/import.
 - **Risks:** Contract drift, idempotency transaction split, data overexposure.
-- **Review checklist:** [ ] HTTP-only types [ ] ownership [ ] expected version [ ] write atomicity [ ] redaction.
+- **Review checklist:** [x] HTTP-only types [x] ownership [x] expected version [x] write atomicity [x] redaction.
 - **Completion report:** Use §11 with `Task ID: MOCK-ORD-001`.
+
+#### MOCK-ORD-001 completion report
+
+- Task ID: `MOCK-ORD-001`
+- Final status: `IN_REVIEW`
+- Owner: Unassigned
+- Goal achieved: Added the customer-scoped Mock-Commerce order search/detail/items API and the approved payment-status synchronization boundary, with exact internal Bearer protection, optimistic order version checks, payment evidence validation, typed business failures, atomic audit/idempotency persistence and exact same-key replay. No SupportPilot runtime or database shortcut was introduced.
+- Files/modules changed: Added HTTP-only `backend/packages/commerce_contracts` order request/response models; Mock-Commerce database/error composition and `orders` router/service/repository modules; application wiring; contract/import-boundary tests; a live HTTP/PostgreSQL integration harness; and this task status/report in `docs/TASKS.md`.
+- Contract/schema impact: Freezes `GET /internal/v1/customers/{customer_ref}/orders`, `GET /internal/v1/orders/{order_id}`, `GET /internal/v1/orders/{order_id}/items` and `POST /internal/v1/orders/{order_id}/sync-payment`. Reads return only scoped order/item projections. Sync requires `Idempotency-Key`, customer ref, transaction ref, expected order version, UUID approval ref and `sha256:` proposal hash; success changes only order `payment_status PENDING→PAID`, increments `version` exactly once, returns `200`, and persists one exact response plus one redacted audit row in the same commerce transaction. No table, enum, constraint, index or public SupportPilot contract changed.
+- Migrations created (if authorized): None; MOCK-ORD-001 consumes the existing reviewer-approved DB-002A commerce schema unchanged.
+- Tests added/updated: Added five local order contract/projection/auth/import tests, an additional shared-package reverse import guard, and a disposable PostgreSQL/live-HTTP harness covering scoped search/detail/items, reciprocal other-customer denial, all four required business error codes, concurrent exact-key replay, different-hash conflict, optimistic version increment, atomic idempotency/audit counts and response/audit redaction.
+- Required context loaded: This `MOCK-ORD-001` task section; `docs/API_CONTRACT.md` §5, §8, §15, §17 and §18; `docs/DATABASE_DESIGN.md` §9.3–§9.7, §12 and §13; `docs/ARCHITECTURE.md` §10, §12 and §13; `docs/SECURITY.md` §6, §8, §14 and §22.
+- Additional context loaded and reasons: Direct dependency completion reports for `DB-002A`, `SEED-001` and `MOCK-AUTH-001`; the task command catalog and completion template; existing Mock-Commerce application/auth/config/logging/model composition, commerce migration grants, seed identifiers plus the active payment-sync policy/scenario fixture, Compose topology and current import-boundary conventions required to implement and verify only this HTTP boundary.
+- Dependency completion reports reviewed: `DB-002A`, `SEED-001` and `MOCK-AUTH-001`; all are reviewer-approved with final status `DONE`, no blocking PLAN deviation, and provide the physical schema, deterministic UC-01 data and authenticated internal boundary consumed by this task.
+- Context intentionally not loaded: Entire `docs/PLAN.md`; unrelated documentation sections/completion reports; SupportPilot workflow/approval/action implementations; Mock payment read API; deterministic resolution, RAG, Gemini, LangGraph, frontend features and all UC-02–UC-07 flows.
+- Commands run and results: Targeted Ruff and strict Mypy PASS; `CMD-CONTRACT` Mock order/auth/import subset PASS (27); final Ruff PASS; full strict Mypy PASS (74 source files); final full backend suite PASS (91); Compose config PASS; disposable PostgreSQL bootstrap, existing support/commerce migrations and deterministic seed PASS; live HTTP/PostgreSQL harness PASS with customer isolation, required errors, final order `PAID/version=2`, one idempotency row, one audit row and one replay among two concurrent same-key calls; live log credential scan PASS; scope/security scans PASS; `git diff --check` PASS; disposable containers/network/volume removed.
+- Security checks: Exact Bearer middleware still runs before route/body/ownership logic; every read/write is scoped in SQL by backend-supplied commerce customer reference and other-customer access returns indistinguishable `ORDER_NOT_FOUND`; shared contracts import no application or persistence runtime; Mock-Commerce imports no SupportPilot module and uses only `COMMERCE_DATABASE_URL`; responses expose no email/phone/card/payment method/provider secret; token is absent from response/audit/live logs; audit details contain only approval reference and proposal hash, not raw request, customer ref or transaction ref.
+- Acceptance criteria evidence: Live reciprocal ownership probes returned `404 ORDER_NOT_FOUND`; missing approval returned `403 APPROVAL_REQUIRED`, stale expected version returned `409 STALE_ORDER`, wrong payment evidence returned `409 PAYMENT_MISMATCH`; the target payment had to be customer/order-linked, `SUCCEEDED`, amount/currency matched and the order still `PENDING`; two concurrent requests with the same operation/key/hash returned the exact same body, exactly one carried `Idempotency-Replayed: true`, and catalog checks showed a single order transition, idempotency record and audit record.
+- Risks/limitations remaining: Mock-Commerce validates that the approval reference is a UUID and the proposal hash has the exact SHA-256 shape; authoritative SupportPilot approval/version/hash authorization and fresh post-write verification remain owned by `APR-001`/`ACT-001` and cannot be checked through cross-schema access. PLAN does not name the different-request-hash idempotency conflict code, so the existing generic `409 REQUEST_VALIDATION_ERROR` convention is used. Payment read endpoints remain exclusively owned by `MOCK-PAY-001`.
+- Deviations from PLAN: None.
+- Follow-up tasks unblocked: After reviewer approval and a separate `DONE` transition, MOCK-ORD-001 will satisfy its dependency edge for `RES-001`, `TOOL-001`, `ACT-001`, `E2E-001B`, `E2E-001D` and `SEC-001`; each task's remaining dependencies still apply. None was started.
 
 ### MOCK-PAY-001 — Mock Payment HTTP API
 
