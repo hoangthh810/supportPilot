@@ -8,3 +8,4 @@
 ## update features
 ## update data fucntion
 ## update function for handling LLMs
+## update data for RAG
