@@ -10,3 +10,4 @@
 ## update function for handling LLMs
 ## update data for RAG
 ## update data IoT
+## update data for grocery
